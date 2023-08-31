@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+
+import shutil
+import protocaas_sdk as pp
+
+app = pp.App('example_app', help="example protocaas processing app")
+
+@pp.processor('example_app.hello_world', help='hello world processor')
+@pp.input('input', help='input file')
+@pp.output('output', help='output file')
+@pp.parameter('message', type=str, default='hello world', help='The message to print')
+def hello_world(
+    input: pp.InputFile,
+    output: pp.OutputFile,
+    message: str
+):
+    print('Hello from a custom protocaas processor!')
+
+    # Print the message to prove that the parameter was passed in
+    print(message)
+
+    # you could use the URL of the input file
+    input_file_url = input.get_url()
+
+    # Or you could download the file
+    input.download('input.nwb')
+
+    # Trivially copy the input file a new output file
+    shutil.copyfile('input.nwb', 'output.nwb')
+
+    # Set the output file (will trigger upload)
+    output.set('output.nwb')
+
+app.add_processor(hello_world)
+
+if __name__ == '__main__':
+    app.run()

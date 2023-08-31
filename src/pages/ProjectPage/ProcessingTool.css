@@ -1,0 +1,28 @@
+.ProcessingTool {
+}
+
+.ProcessingTool:hover {
+    background: #eee;
+}
+
+.ProcessingToolImage {
+}
+
+.ProcessingToolTitle {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.ProcessingToolDescription {
+    font-size: 16px;
+}
+
+.ProcessingToolParameters {
+    font-size: 14px;
+    color: #444;
+}
+
+.ProcessingToolTags {
+    font-size: 14px;
+    color: #444;
+}
