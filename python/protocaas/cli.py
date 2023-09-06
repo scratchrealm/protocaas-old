@@ -1,9 +1,7 @@
 import click
-import protocaas
-from .init_compute_resource_node import init_compute_resource_node as init_compute_resource_node_function
-from .start_compute_resource_node import start_compute_resource_node as start_compute_resource_node_function
-from .run_job import run_job as run_job_function
-from .handle_job import handle_job as handle_job_function
+from .compute_resource.init_compute_resource_node import init_compute_resource_node as init_compute_resource_node_function
+from .compute_resource.start_compute_resource_node import start_compute_resource_node as start_compute_resource_node_function
+from .compute_resource.run_job import run_job as run_job_function
 
 @click.group(help="protocaas command line interface")
 def main():
@@ -19,26 +17,13 @@ def init_compute_resource_node(compute_resource_id: str, compute_resource_privat
 def start_compute_resource_node():
     start_compute_resource_node_function(dir='.')
 
-@click.command(help='Run the job in the current directory (used internally)')
-def run_job():
-    run_job_function()
-
-@click.command(help='Handle a job by interacting with the protocaas REST API (used internally)')
+@click.command(help="Run a job (used internally by the compute resource)")
 @click.option('--job-id', help='Job ID')
-def handle_job(job_id: str):
-    handle_job_function(job_id=job_id)
-
-@click.command(help='Initialize the singularity container')
-def init_singularity_container():
-    protocaas.init_singularity_container()
-
-@click.command(help='Initialize the docker container')
-def init_docker_container():
-    protocaas.init_docker_container()
+@click.option('--job-private-key', help='Job private key')
+@click.option('--executable-path', help='Executable path for the app')
+def run_job(job_id: str, job_private_key: str, executable_path: str):
+    run_job_function(job_id=job_id, job_private_key=job_private_key, app_executable=executable_path)
 
 main.add_command(init_compute_resource_node)
 main.add_command(start_compute_resource_node)
 main.add_command(run_job)
-main.add_command(handle_job)
-main.add_command(init_singularity_container)
-main.add_command(init_docker_container)
