@@ -375,7 +375,7 @@ export const deleteComputeResource = async (computeResourceId: string, auth: Aut
 }
 
 export type ProtocaasProcessingJobDefinition = {
-    toolName: string,
+    processorName: string,
     inputFiles: {
         name: string
         fileName: string
@@ -401,7 +401,7 @@ export const createJob = async (
         timestamp: Date.now() / 1000,
         workspaceId,
         projectId,
-        toolName: jobDef.toolName,
+        processorName: jobDef.processorName,
         inputFiles: jobDef.inputFiles,
         inputParameters: jobDef.inputParameters,
         outputFiles: jobDef.outputFiles

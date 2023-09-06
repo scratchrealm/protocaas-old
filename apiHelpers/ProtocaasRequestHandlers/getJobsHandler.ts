@@ -55,6 +55,11 @@ const getJobsHandler = async (request: GetJobsRequest, o: {verifiedClientId?: st
         })
     }
 
+    // hide the jobPrivateKey from the jobs
+    for (const job of jobs) {
+        job.jobPrivateKey = ''
+    }
+
     return {
         type: 'getJobs',
         jobs

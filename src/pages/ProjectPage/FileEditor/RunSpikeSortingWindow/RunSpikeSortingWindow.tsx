@@ -48,7 +48,7 @@ const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({f
                 name: p.name,
                 value: p.default
             })),
-            toolName: spikeSortingTool.name
+            processorName: spikeSortingTool.name
         }
         setJobDefinition(jd)
     }, [spikeSortingTool, fileName])

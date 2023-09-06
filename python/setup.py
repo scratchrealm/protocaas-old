@@ -62,7 +62,8 @@ setup(
         'simplejson',
         'numpy',
         'PyYAML',
-        'remfile'
+        'remfile',
+        'pubnub>=7.2.0'
     ],
     cmdclass={
         'install': NpmInstallCommand,

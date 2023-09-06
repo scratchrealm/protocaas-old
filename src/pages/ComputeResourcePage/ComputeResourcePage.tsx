@@ -42,7 +42,7 @@ const ComputeResourcesPage: FunctionComponent<Props> = ({width, height, computeR
     const sortedJobs = useMemo(() => {
         return jobs ? [...jobs].sort((a, b) => (b.timestampCreated - a.timestampCreated))
             .sort((a, b) => {
-                const statuses = ['running', 'pending', 'failed', 'completed']
+                const statuses = ['running', 'starting', 'pending', 'failed', 'completed']
                 return statuses.indexOf(a.status) - statuses.indexOf(b.status)
             }) : undefined
     }, [jobs])

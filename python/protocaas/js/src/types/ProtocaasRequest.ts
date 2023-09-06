@@ -660,7 +660,7 @@ export type CreateJobRequest = {
     timestamp: number
     workspaceId: string
     projectId: string
-    toolName: string
+    processorName: string
     inputFiles: {
         name: string
         fileName: string
@@ -681,7 +681,7 @@ export const isCreateJobRequest = (x: any): x is CreateJobRequest => {
         timestamp: isNumber,
         workspaceId: isString,
         projectId: isString,
-        toolName: isString,
+        processorName: isString,
         inputFiles: isArrayOf(y => (validateObject(y, {
             name: isString,
             fileName: isString
@@ -773,7 +773,7 @@ export type GetJobsRequest = {
     type: 'getJobs'
     timestamp: number
     computeResourceId?: string
-    status?: 'pending' | 'running' | 'completed' | 'failed'
+    status?: 'pending' | 'starting' | 'running' | 'completed' | 'failed'
     projectId?: string
     nodeId?: string
     nodeName?: string

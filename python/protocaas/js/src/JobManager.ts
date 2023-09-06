@@ -100,7 +100,7 @@ class JobManager {
 export class RunningJob {
     #onCompletedOrFailedCallbacks: (() => void)[] = []
     #childProcess: ChildProcessWithoutNullStreams | null = null
-    #status: 'pending' | 'queued' | 'running' | 'completed' | 'failed' = 'pending'
+    #status: 'pending' | 'queued' | 'starting' | 'running' | 'completed' | 'failed' = 'pending'
     #stopped = false
     constructor(private dir: string, public job: ProtocaasJob) {
     }
@@ -108,7 +108,7 @@ export class RunningJob {
         if (this.#childProcess) {
             throw Error('Unexpected: Child process already running')
         }
-        console.info(`Initiating job: ${this.job.jobId} - ${this.job.toolName}`)
+        console.info(`Initiating job: ${this.job.jobId} - ${this.job.processorName}`)
         
         const cmd = 'protocaas'
         const args = ['handle-job', '--job-id', this.job.jobId]

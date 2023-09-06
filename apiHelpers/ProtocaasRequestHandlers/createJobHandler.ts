@@ -67,13 +67,15 @@ const createJobHandler = async (request: CreateJobRequest, o: {verifiedClientId?
     }
 
     const jobId = createRandomId(8)
+    const jobPrivateKey = createRandomId(32)
 
     const job: ProtocaasJob = {
         jobId,
+        jobPrivateKey,
         workspaceId,
         projectId: request.projectId,
         userId,
-        toolName: request.toolName,
+        processorName: request.processorName,
         inputFiles,
         inputFileIds: inputFiles.map(x => x.fileId),
         inputParameters: request.inputParameters,

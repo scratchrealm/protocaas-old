@@ -58,8 +58,9 @@ export type ProtocaasJob = {
     projectId: string
     workspaceId: string
     jobId: string
+    jobPrivateKey: string
     userId: string
-    toolName: string
+    processorName: string
     inputFiles: {
         name: string
         fileId: string
@@ -77,7 +78,7 @@ export type ProtocaasJob = {
     }[]
     timestampCreated: number
     computeResourceId: string
-    status: 'pending' | 'queued' | 'running' | 'completed' | 'failed'
+    status: 'pending' | 'queued' | 'starting' | 'running' | 'completed' | 'failed'
     error?: string
     processVersion?: string
     computeResourceNodeId?: string
@@ -94,8 +95,9 @@ export const isProtocaasJob = (x: any): x is ProtocaasJob => {
         projectId: isString,
         workspaceId: isString,
         jobId: isString,
+        jobPrivateKey: isString,
         userId: isString,
-        toolName: isString,
+        processorName: isString,
         inputFiles: isArrayOf(y => (validateObject(y, {
             name: isString,
             fileId: isString,

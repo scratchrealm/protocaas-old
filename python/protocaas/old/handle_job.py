@@ -63,7 +63,7 @@ def handle_job(*, job_id: str):
                     'value': a['value']
                 })
         job_json = {
-            'tool_name': job['toolName'],
+            'processor_name': job['processorName'],
             'input_files': input_files,
             'output_files': output_files,
             'parameters': parameters

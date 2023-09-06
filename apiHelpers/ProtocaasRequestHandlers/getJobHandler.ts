@@ -1,6 +1,5 @@
-import { GetJobRequest, GetJobResponse } from "../../src/types/ProtocaasRequest";
 import { isProtocaasJob } from "../../src/types/protocaas-types";
-import getProject from "../getProject";
+import { GetJobRequest, GetJobResponse } from "../../src/types/ProtocaasRequest";
 import { getMongoClient } from "../getMongoClient";
 import getWorkspace from "../getWorkspace";
 import { userCanReadWorkspace } from "../permissions";
@@ -27,6 +26,9 @@ const getJob = async (request: GetJobRequest, o: {verifiedClientId?: string, ver
     if (!userCanReadWorkspace(workspace, o.verifiedUserId, o.verifiedClientId)) {
         throw new Error('User does not have permission to read this workspace')
     }
+
+    // hide the job private key
+    job.jobPrivateKey = ''
     
     return {
         type: 'getJob',

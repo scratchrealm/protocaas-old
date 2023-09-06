@@ -179,7 +179,7 @@ const NwbFileEditorChild: FunctionComponent<Props> = ({fileName, width, height})
                 electricalSeriesPaths && (
                     electricalSeriesPaths.length > 0 ? (
                         <RunSpikeSortingComponent
-                            onSelect={(toolName) => {setSelectedSpikeSortingTool(toolName); openRunSpikeSortingWindow();}}
+                            onSelect={(processorName) => {setSelectedSpikeSortingTool(processorName); openRunSpikeSortingWindow();}}
                         />
                     ) : (
                         <div>No electrical series found</div>
@@ -203,7 +203,7 @@ const NwbFileEditorChild: FunctionComponent<Props> = ({fileName, width, height})
 }
 
 type RunSpikeSortingComponentProps = {
-    onSelect?: (toolName: string) => void
+    onSelect?: (processorName: string) => void
 }
 
 const RunSpikeSortingComponent: FunctionComponent<RunSpikeSortingComponentProps> = ({onSelect}) => {

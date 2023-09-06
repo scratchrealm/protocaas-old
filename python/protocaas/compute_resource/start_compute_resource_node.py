@@ -7,9 +7,10 @@ from ..sdk.App import App
 from ..sdk._post_api_request import _post_api_request
 from .RunningJob import RunningJob
 from .run_job import _set_job_status
+from .PubsubClient import PubsubClient
 
 
-this_directory = Path(__file__).parent
+max_simultaneous_jobs = 2
 
 class Daemon:
     def __init__(self, *, dir: str):
@@ -21,11 +22,28 @@ class Daemon:
             raise ValueError('Compute resource has not been initialized in this directory, and the environment variable COMPUTE_RESOURCE_PRIVATE_KEY is not set.')
         self._apps = _load_apps(compute_resource_id=self._compute_resource_id, compute_resource_private_key=self._compute_resource_private_key)
         self._running_jobs: list[RunningJob] = []
+        pubsub_subscription = get_pubsub_subscription(compute_resource_id=self._compute_resource_id, compute_resource_private_key=self._compute_resource_private_key)
+        self._pubsub_client = PubsubClient(
+            pubnub_subscribe_key=pubsub_subscription['pubnubSubscribeKey'],
+            pubnub_channel=pubsub_subscription['pubnubChannel'],
+            pubnub_user=pubsub_subscription['pubnubUser']
+        )
     def start(self):
+        timer_check_new_jobs = 0
         while True:
             self._check_for_dead_jobs()
-            self._check_for_new_jobs()
-            time.sleep(0.5)
+            num_running_jobs = len(self._running_jobs)
+            if num_running_jobs < max_simultaneous_jobs:
+                elapsed = time.time() - timer_check_new_jobs
+                need_to_check_for_new_jobs = elapsed > 60
+                messages = self._pubsub_client.take_messages()
+                for msg in messages:
+                    if msg['type'] == 'newPendingJob':
+                        need_to_check_for_new_jobs = True
+                if need_to_check_for_new_jobs:
+                    timer_check_new_jobs = time.time()
+                    self._check_for_new_jobs()
+            time.sleep(0.1)
     def _check_for_dead_jobs(self):
         for job in self._running_jobs:
             if not job.is_alive():
@@ -82,3 +100,14 @@ def start_compute_resource_node(dir: str):
 
     daemon = Daemon(dir=dir)
     daemon.start()
+
+def get_pubsub_subscription(*, compute_resource_id: str, compute_resource_private_key: str) -> str:
+    req = {
+        'type': 'computeResource.getPubsubSubscription',
+        'computeResourceId': compute_resource_id,
+        'computeResourcePrivateKey': compute_resource_private_key
+    }
+    resp = _post_api_request(req)
+    return {
+        'subscription': resp['subscription']
+    }

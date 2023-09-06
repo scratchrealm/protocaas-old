@@ -49,14 +49,14 @@ def run_job():
     if not os.path.exists('outputs'):
         os.mkdir('outputs')
     
-    tool_name = job['tool_name']
+    processor_name = job['processor_name']
     tool = None
     for pt in processing_tools:
-        if pt.get_name() == tool_name:
+        if pt.get_name() == processor_name:
             tool = pt
             break
     if tool is None:
-        raise ValueError(f'Processing tool not found: {tool_name}')
+        raise ValueError(f'Processing tool not found: {processor_name}')
     
     class ProtocaasProcessingToolContextImpl(ProtocaasProcessingToolContext):
         def get_data(self) -> Any:
@@ -87,7 +87,7 @@ def run_job():
                 }
                 json.dump(out, f)
     
-    print(f'Running job: {tool_name}')
+    print(f'Running job: {processor_name}')
     for x in job['input_files']:
         print(f'  Input file: {x["name"]}')
     for x in job['output_files']:

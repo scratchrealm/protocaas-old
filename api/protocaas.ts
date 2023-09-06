@@ -34,6 +34,10 @@ import setComputeResourceSpecHandler from '../apiHelpers/ProtocaasRequestHandler
 import getComputeResourceSpecHandler from '../apiHelpers/ProtocaasRequestHandlers/getComputeResourceSpecHandler'
 import verifySignature from '../apiHelpers/verifySignature'
 import { isCreateProjectRequest, isCreateJobRequest, isCreateWorkspaceRequest, isDeleteComputeResourceRequest, isDeleteFileRequest, isDeleteProjectRequest, isDeleteJobRequest, isDeleteWorkspaceRequest, isDuplicateFileRequest, isGetActiveComputeResourceNodesRequest, isGetComputeResourceRequest, isGetComputeResourcesRequest, isGetDataBlobRequest, isGetJobsRequest, isGetFileRequest, isGetFilesRequest, isGetProjectRequest, isGetProjectsRequest, isGetPubsubSubscriptionRequest, isGetJobRequest, isGetWorkspaceRequest, isGetWorkspacesRequest, isProtocaasRequest, isRegisterComputeResourceRequest, isRenameFileRequest, isSetFileRequest, isSetProjectPropertyRequest, isSetJobPropertyRequest, isSetWorkspacePropertyRequest, isSetWorkspaceUsersRequest, isSetComputeResourceSpecRequest, isGetComputeResourceSpecRequest } from '../src/types/ProtocaasRequest'
+import {ProtocaasProcessorRequest, isProtocaasProcessorRequest, ProtocaasProcessorResponse, isProcessorGetJobRequest, isProcessorSetJobStatusRequest, isProcessorSetJobConsoleOutputRequest} from '../apiHelpers/ProtocaasProcessorRequestHandlers/ProtocaasProcessorRequest'
+import processorGetJobHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorGetJobHandler'
+import processorSetJobStatusHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorSetJobStatusHandler'
+import processorSetJobConsoleOutputHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorSetJobConsoleOutputHandler'
 
 const ADMIN_USER_IDS = JSON.parse(process.env.ADMIN_USER_IDS || '[]') as string[]
 
@@ -61,22 +65,25 @@ module.exports = (req: VercelRequest, res: VercelResponse) => {
     }
     ///////////////////////////////////////////
 
-    if (!isProtocaasRequest(request)) {
-        res.status(400).send(`Invalid request: ${JSON.stringify(request)}`)
-        return
-    }
-
-    const { payload, fromClientId, signature, userId, githubAccessToken } = request
-    const { timestamp } = payload
-    const elapsed = (Date.now() / 1000) - timestamp
-    if ((elapsed > 30) || (elapsed < -30)) { 
-        // Note the range used to be narrower, but was running into problems
-        // For example, got elapsed = -0.662
-        // Not sure the best way to do this check
-        throw Error(`Invalid timestamp. ${timestamp} ${Date.now() / 1000} ${elapsed}`)
-    }
-
     (async () => {
+        if (isProtocaasProcessorRequest(request)) {
+            return await handleProcessorRequest(request)
+        }
+
+        if (!isProtocaasRequest(request)) {
+            res.status(400).send(`Invalid request: ${JSON.stringify(request)}`)
+            return
+        }
+
+        const { payload, fromClientId, signature, userId, githubAccessToken } = request
+        const { timestamp } = payload
+        const elapsed = (Date.now() / 1000) - timestamp
+        if ((elapsed > 30) || (elapsed < -30)) { 
+            // Note the range used to be narrower, but was running into problems
+            // For example, got elapsed = -0.662
+            // Not sure the best way to do this check
+            throw Error(`Invalid timestamp. ${timestamp} ${Date.now() / 1000} ${elapsed}`)
+        }
         let verifiedClientId: string | undefined = undefined
         if (fromClientId) {
             if (!signature) throw Error('No signature provided with fromClientId')
@@ -209,4 +216,19 @@ module.exports = (req: VercelRequest, res: VercelResponse) => {
         console.warn(error.message)
         res.status(500).send(`Error: ${error.message}`)
     })
+}
+
+const handleProcessorRequest = async (request: ProtocaasProcessorRequest): Promise<ProtocaasProcessorResponse> => {
+    if (isProcessorGetJobRequest(request)) {
+        return await processorGetJobHandler(request)
+    }
+    else if (isProcessorSetJobStatusRequest(request)) {
+        return await processorSetJobStatusHandler(request)
+    }
+    else if (isProcessorSetJobConsoleOutputRequest(request)) {
+        return await processorSetJobConsoleOutputHandler(request)
+    }
+    else {
+        throw Error(`Unexpected processor request type: ${(request as any).type}`)
+    }
 }
