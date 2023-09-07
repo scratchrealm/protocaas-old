@@ -1,4 +1,4 @@
-import { FunctionComponent, useCallback, useEffect, useMemo } from "react";
+import { FunctionComponent, useCallback, useEffect, useMemo, useState } from "react";
 import { ProtocaasProcessingJobDefinition } from "../../../../dbInterface/dbInterface";
 import { RemoteH5File } from "../../../../RemoteH5File/RemoteH5File";
 import { ComputeResourceSpecProcessor, ComputeResourceSpecProcessorParameter } from "../../../../types/protocaas-types";
@@ -110,7 +110,7 @@ const OutputRow: FunctionComponent<OutputRowProps> = ({name, description, value}
 
 type ParameterRowProps = {
     parameter: ComputeResourceSpecProcessorParameter
-    value?: string
+    value: any
     nwbFile?: RemoteH5File
     setValue: (value: any) => void
 }
@@ -135,7 +135,7 @@ const ParameterRow: FunctionComponent<ParameterRowProps> = ({parameter, value, n
 
 type EditParameterValueProps = {
     parameter: ComputeResourceSpecProcessorParameter
-    value?: string
+    value: any
     nwbFile?: RemoteH5File
     setValue: (value: any) => void
 }
@@ -149,10 +149,10 @@ const EditParameterValue: FunctionComponent<EditParameterValueProps> = ({paramet
         return <input type="text" value={value} onChange={evt => {setValue(evt.target.value)}} />
     }
     else if (type === 'int') {
-        return <input type="number" value={value} onChange={evt => {setValue(evt.target.value)}} />
+        return <IntEdit value={value} setValue={setValue} />
     }
     else if (type === 'float') {
-        return <input type="number" value={value} onChange={evt => {setValue(evt.target.value)}} />
+        return <FloatEdit value={value} setValue={setValue} />
     }
     else if (type === 'bool') {
         return <input type="checkbox" checked={value === 'true'} onChange={evt => {setValue(evt.target.checked ? 'true' : 'false')}} />
@@ -173,6 +173,72 @@ const EditParameterValue: FunctionComponent<EditParameterValueProps> = ({paramet
     else {
         return <div>Unsupported type: {type}</div>
     }
+}
+
+type IntEditProps = {
+    value: any
+    setValue: (value: number) => void
+}
+
+const IntEdit: FunctionComponent<IntEditProps> = ({value, setValue}) => {
+    const [internalValue, setInternalValue] = useState<string>(value)
+    useEffect(() => {
+        if (isIntType(value)) {
+            setInternalValue(old => {
+                if (parseInt(old) === value) return old
+                return `${value}`
+            })
+        }
+    }, [value])
+
+    useEffect(() => {
+        if (stringIsInt(internalValue)) {
+            setValue(parseInt(internalValue))
+        }
+    }, [internalValue, setValue])
+
+    return <input type="text" value={internalValue} onChange={evt => {setInternalValue(evt.target.value)}} />
+}
+
+const isIntType = (x: any) => {
+    return (typeof(x) === 'number') && (Math.floor(x) === x)
+}
+
+const stringIsInt = (x: string) => {
+    return isIntType(parseInt(x))
+}
+
+type FloatEditProps = {
+    value: any
+    setValue: (value: number) => void
+}
+
+const FloatEdit: FunctionComponent<FloatEditProps> = ({value, setValue}) => {
+    const [internalValue, setInternalValue] = useState<string>(value)
+    useEffect(() => {
+        if (isFloatType(value)) {
+            setInternalValue(old => {
+                if (parseFloat(old) === value) return old
+                return `${value}`
+            })
+        }
+    }, [value])
+
+    useEffect(() => {
+        if (stringIsFloat(internalValue)) {
+            setValue(parseFloat(internalValue))
+        }
+    }, [internalValue, setValue])
+
+    return <input type="text" value={internalValue} onChange={evt => {setInternalValue(evt.target.value)}} />
+}
+
+const isFloatType = (x: any) => {
+    return (typeof(x) === 'number') && (!isNaN(x))
+}
+
+const stringIsFloat = (x: string) => {
+    return isFloatType(parseFloat(x))
 }
 
 type ElectricalSeriesPathSelectorProps = {

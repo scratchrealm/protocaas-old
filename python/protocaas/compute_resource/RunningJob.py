@@ -52,6 +52,7 @@ class RunningJob:
             print(f'Killing process for job {self._job_id}')
             self._process.kill()
             self._process.stdout.close()
+            self._process.stderr.close()
     def is_alive(self):
         return self._process.poll() is None
     def retcode(self):

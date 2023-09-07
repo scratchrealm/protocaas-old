@@ -139,6 +139,7 @@ def handle_job(*, job_id: str):
         finally:
             output_reader_thread.join()
             proc.stdout.close()
+            proc.stderr.close()
             proc.terminate()
 
         # read the output files and set them in the job

@@ -51,11 +51,9 @@ def run_job(*, job_id: str, job_private_key: str, app_executable: str):
         while True:
             try:
                 retcode = proc.wait(1)
-                if retcode != 0:
-                    raise ValueError(f'Error running job: return code {retcode}')
-                break
+                # don't check this now -- wait until after we had a chance to read the last console output
             except subprocess.TimeoutExpired:
-                pass
+                retcode = None
             while True:
                 try:
                     x = outq.get(block=False)
@@ -80,6 +78,10 @@ def run_job(*, job_id: str, job_private_key: str, app_executable: str):
                     except Exception as e:
                         print('WARNING: problem setting console output: ' + str(e))
                         pass
+            if retcode is not None:
+                if retcode != 0:
+                    raise ValueError(f'Error running job: return code {retcode}')
+                break
 
             elapsed = time.time() - last_check_job_exists_time
             if elapsed > 30:
@@ -99,6 +101,7 @@ def run_job(*, job_id: str, job_private_key: str, app_executable: str):
     finally:
         try:
             proc.stdout.close()
+            proc.stderr.close()
             proc.terminate()
         except Exception:
             pass
@@ -106,7 +109,7 @@ def run_job(*, job_id: str, job_private_key: str, app_executable: str):
     if console_output_changed:
         try:
             _set_job_console_output(job_id=job_id, job_private_key=job_private_key, console_output=all_output.decode('utf-8'))
-        except:
+        except Exception as e:
             print('WARNING: problem setting final console output: ' + str(e))
             pass
 
