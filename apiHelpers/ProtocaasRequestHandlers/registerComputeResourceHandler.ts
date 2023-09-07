@@ -32,7 +32,8 @@ const registerComputeResourceHandler = async (request: RegisterComputeResourceRe
             computeResourceId,
             ownerId: userId,
             name: request.name,
-            timestampCreated: Date.now() / 1000
+            timestampCreated: Date.now() / 1000,
+            apps: []
         }
         await computeResourcesCollection.insertOne(x)
     }

@@ -181,6 +181,11 @@ export type ProtocaasComputeResource = {
     ownerId: string
     name: string
     timestampCreated: number
+    apps: {
+        name: string
+        executablePath: string
+        container?: string
+    }[]
 }
 
 export const isProtocaasComputeResource = (x: any): x is ProtocaasComputeResource => {
@@ -188,7 +193,12 @@ export const isProtocaasComputeResource = (x: any): x is ProtocaasComputeResourc
         computeResourceId: isString,
         ownerId: isString,
         name: isString,
-        timestampCreated: isNumber
+        timestampCreated: isNumber,
+        apps: isArrayOf(y => (validateObject(y, {
+            name: isString,
+            executablePath: isString,
+            container: optional(isString)
+        })))
     })
 }
 

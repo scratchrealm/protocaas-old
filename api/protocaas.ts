@@ -1,43 +1,47 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import githubVerifyAccessToken from '../apiHelpers/githubVerifyAccessToken'
 import JSONStringifyDeterminsitic from '../apiHelpers/jsonStringifyDeterministic'
-import createProjectHandler from '../apiHelpers/ProtocaasRequestHandlers/createProjectHandler'
+import computeResourceGetAppsHandler from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/computeResourceGetAppsHandler'
+import computeResourceGetPendingJobsHandler from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/computeResourceGetPendingJobsHandler'
+import computeResourceGetPubsubSubscriptionHandler from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/computeResourceGetPubsubSubscriptionHandler'
+import { isComputeResourceGetAppsRequest, isComputeResourceGetPendingJobsRequest, isComputeResourceGetPubsubSubscriptionRequest, isProtocaasComputeResourceRequest, ProtocaasComputeResourceRequest, ProtocaasComputeResourceResponse } from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/ProtocaasComputeResourceRequest'
+import processorGetJobHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorGetJobHandler'
+import processorSetJobConsoleOutputHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorSetJobConsoleOutputHandler'
+import processorSetJobStatusHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorSetJobStatusHandler'
+import { isProcessorGetJobRequest, isProcessorSetJobConsoleOutputRequest, isProcessorSetJobStatusRequest, isProtocaasProcessorRequest, ProtocaasProcessorRequest, ProtocaasProcessorResponse } from '../apiHelpers/ProtocaasProcessorRequestHandlers/ProtocaasProcessorRequest'
 import createJobHandler from '../apiHelpers/ProtocaasRequestHandlers/createJobHandler'
+import createProjectHandler from '../apiHelpers/ProtocaasRequestHandlers/createProjectHandler'
 import createWorkspaceHandler from '../apiHelpers/ProtocaasRequestHandlers/createWorkspaceHandler'
 import deleteComputeResourceHandler from '../apiHelpers/ProtocaasRequestHandlers/deleteComputeResourceHandler'
 import deleteFileHandler from '../apiHelpers/ProtocaasRequestHandlers/deleteFileHandler'
-import deleteProjectHandler from '../apiHelpers/ProtocaasRequestHandlers/deleteProjectHandler'
 import deleteJobHandler from '../apiHelpers/ProtocaasRequestHandlers/deleteJobHandler'
+import deleteProjectHandler from '../apiHelpers/ProtocaasRequestHandlers/deleteProjectHandler'
 import deleteWorkspaceHandler from '../apiHelpers/ProtocaasRequestHandlers/deleteWorkspaceHandler'
 import duplicateFileHandler from '../apiHelpers/ProtocaasRequestHandlers/duplicateFileHandler'
-import getComputeResourcesHandler from '../apiHelpers/ProtocaasRequestHandlers/getComputeResourcesHandler'
-import getComputeResourceHandler from '../apiHelpers/ProtocaasRequestHandlers/getComputeResourceHandler'
-import getDataBlobHandler from '../apiHelpers/ProtocaasRequestHandlers/getDataBlobHandler'
 import getActiveComputeResourceNodesHandler from '../apiHelpers/ProtocaasRequestHandlers/getActiveComputeResourceNodesHandler'
+import getComputeResourceHandler from '../apiHelpers/ProtocaasRequestHandlers/getComputeResourceHandler'
+import getComputeResourcesHandler from '../apiHelpers/ProtocaasRequestHandlers/getComputeResourcesHandler'
+import getComputeResourceSpecHandler from '../apiHelpers/ProtocaasRequestHandlers/getComputeResourceSpecHandler'
+import getDataBlobHandler from '../apiHelpers/ProtocaasRequestHandlers/getDataBlobHandler'
 import getFileHandler from '../apiHelpers/ProtocaasRequestHandlers/getFileHandler'
 import getFilesHandler from '../apiHelpers/ProtocaasRequestHandlers/getFilesHandler'
-import getProjectHandler from '../apiHelpers/ProtocaasRequestHandlers/getProjectHandler'
-import getProjectsHandler from '../apiHelpers/ProtocaasRequestHandlers/getProjectsHandler'
 import getJobHandler from '../apiHelpers/ProtocaasRequestHandlers/getJobHandler'
 import getJobsHandler from '../apiHelpers/ProtocaasRequestHandlers/getJobsHandler'
+import getProjectHandler from '../apiHelpers/ProtocaasRequestHandlers/getProjectHandler'
+import getProjectsHandler from '../apiHelpers/ProtocaasRequestHandlers/getProjectsHandler'
+import getPubsubSubscriptionHandler from '../apiHelpers/ProtocaasRequestHandlers/getPubsubSubscriptionHandler'
 import getWorkspaceHandler from '../apiHelpers/ProtocaasRequestHandlers/getWorkspaceHandler'
 import getWorkspacesHandler from '../apiHelpers/ProtocaasRequestHandlers/getWorkspacesHandler'
 import registerComputeResourceHandler from '../apiHelpers/ProtocaasRequestHandlers/registerComputeResourceHandler'
 import renameFileHandler from '../apiHelpers/ProtocaasRequestHandlers/renameFileHandler'
+import setComputeResourceSpecHandler from '../apiHelpers/ProtocaasRequestHandlers/setComputeResourceSpecHandler'
 import setFileHandler from '../apiHelpers/ProtocaasRequestHandlers/setFileHandler'
-import setProjectPropertyHandler from '../apiHelpers/ProtocaasRequestHandlers/setProjectPropertyHandler'
 import setJobPropertyHandler from '../apiHelpers/ProtocaasRequestHandlers/setJobPropertyHandler'
+import setProjectPropertyHandler from '../apiHelpers/ProtocaasRequestHandlers/setProjectPropertyHandler'
 import setWorkspacePropertyHandler from '../apiHelpers/ProtocaasRequestHandlers/setWorkspacePropertyHandler'
 import setWorkspaceUsersHandler from '../apiHelpers/ProtocaasRequestHandlers/setWorkspaceUsersHandler'
-import getPubsubSubscriptionHandler from '../apiHelpers/ProtocaasRequestHandlers/getPubsubSubscriptionHandler'
-import setComputeResourceSpecHandler from '../apiHelpers/ProtocaasRequestHandlers/setComputeResourceSpecHandler'
-import getComputeResourceSpecHandler from '../apiHelpers/ProtocaasRequestHandlers/getComputeResourceSpecHandler'
 import verifySignature from '../apiHelpers/verifySignature'
-import { isCreateProjectRequest, isCreateJobRequest, isCreateWorkspaceRequest, isDeleteComputeResourceRequest, isDeleteFileRequest, isDeleteProjectRequest, isDeleteJobRequest, isDeleteWorkspaceRequest, isDuplicateFileRequest, isGetActiveComputeResourceNodesRequest, isGetComputeResourceRequest, isGetComputeResourcesRequest, isGetDataBlobRequest, isGetJobsRequest, isGetFileRequest, isGetFilesRequest, isGetProjectRequest, isGetProjectsRequest, isGetPubsubSubscriptionRequest, isGetJobRequest, isGetWorkspaceRequest, isGetWorkspacesRequest, isProtocaasRequest, isRegisterComputeResourceRequest, isRenameFileRequest, isSetFileRequest, isSetProjectPropertyRequest, isSetJobPropertyRequest, isSetWorkspacePropertyRequest, isSetWorkspaceUsersRequest, isSetComputeResourceSpecRequest, isGetComputeResourceSpecRequest } from '../src/types/ProtocaasRequest'
-import {ProtocaasProcessorRequest, isProtocaasProcessorRequest, ProtocaasProcessorResponse, isProcessorGetJobRequest, isProcessorSetJobStatusRequest, isProcessorSetJobConsoleOutputRequest} from '../apiHelpers/ProtocaasProcessorRequestHandlers/ProtocaasProcessorRequest'
-import processorGetJobHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorGetJobHandler'
-import processorSetJobStatusHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorSetJobStatusHandler'
-import processorSetJobConsoleOutputHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorSetJobConsoleOutputHandler'
+import { isCreateJobRequest, isCreateProjectRequest, isCreateWorkspaceRequest, isDeleteComputeResourceRequest, isDeleteFileRequest, isDeleteJobRequest, isDeleteProjectRequest, isDeleteWorkspaceRequest, isDuplicateFileRequest, isGetActiveComputeResourceNodesRequest, isGetComputeResourceRequest, isGetComputeResourceSpecRequest, isGetComputeResourcesRequest, isGetDataBlobRequest, isGetFileRequest, isGetFilesRequest, isGetJobRequest, isGetJobsRequest, isGetProjectRequest, isGetProjectsRequest, isGetPubsubSubscriptionRequest, isGetWorkspaceRequest, isGetWorkspacesRequest, isProtocaasRequest, isRegisterComputeResourceRequest, isRenameFileRequest, isSetComputeResourceSpecRequest, isSetFileRequest, isSetJobPropertyRequest, isSetProjectPropertyRequest, isSetWorkspacePropertyRequest, isSetWorkspaceUsersRequest } from '../src/types/ProtocaasRequest'
 
 const ADMIN_USER_IDS = JSON.parse(process.env.ADMIN_USER_IDS || '[]') as string[]
 
@@ -68,6 +72,10 @@ module.exports = (req: VercelRequest, res: VercelResponse) => {
     (async () => {
         if (isProtocaasProcessorRequest(request)) {
             return await handleProcessorRequest(request)
+        }
+
+        if (isProtocaasComputeResourceRequest(request)) {
+            return await handleComputeResourceRequest(request)
         }
 
         if (!isProtocaasRequest(request)) {
@@ -230,5 +238,20 @@ const handleProcessorRequest = async (request: ProtocaasProcessorRequest): Promi
     }
     else {
         throw Error(`Unexpected processor request type: ${(request as any).type}`)
+    }
+}
+
+const handleComputeResourceRequest = async (request: ProtocaasComputeResourceRequest): Promise<ProtocaasComputeResourceResponse> => {
+    if (isComputeResourceGetAppsRequest(request)) {
+        return await computeResourceGetAppsHandler(request)
+    }
+    else if (isComputeResourceGetPendingJobsRequest(request)) {
+        return await computeResourceGetPendingJobsHandler(request)
+    }
+    else if (isComputeResourceGetPubsubSubscriptionRequest(request)) {
+        return await computeResourceGetPubsubSubscriptionHandler(request)
+    }
+    else {
+        throw Error(`Unexpected compute resource request type: ${(request as any).type}`)
     }
 }

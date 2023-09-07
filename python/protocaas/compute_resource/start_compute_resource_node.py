@@ -8,6 +8,7 @@ from ..sdk._post_api_request import _post_api_request
 from .RunningJob import RunningJob
 from .run_job import _set_job_status
 from .PubsubClient import PubsubClient
+from .crypto_keys import sign_message
 
 
 max_simultaneous_jobs = 2
@@ -16,6 +17,8 @@ class Daemon:
     def __init__(self, *, dir: str):
         self._compute_resource_id = os.getenv('COMPUTE_RESOURCE_ID', None)
         self._compute_resource_private_key = os.getenv('COMPUTE_RESOURCE_PRIVATE_KEY', None)
+        self._node_id = os.getenv('NODE_ID', None)
+        self._node_name = os.getenv('NODE_NAME', None)
         if self._compute_resource_id is None:
             raise ValueError('Compute resource has not been initialized in this directory, and the environment variable COMPUTE_RESOURCE_ID is not set.')
         if self._compute_resource_private_key is None:
@@ -49,10 +52,13 @@ class Daemon:
             if not job.is_alive():
                 self._running_jobs.remove(job)
     def _check_for_new_jobs(self):
+        signature = sign_message({'type': 'computeResource.getPendingJobs'}, self._compute_resource_id, self._compute_resource_private_key)
         req = {
             'type': 'computeResource.getPendingJobs',
             'computeResourceId': self._compute_resource_id,
-            'computeResourcePrivateKey': self._compute_resource_private_key
+            'signature': signature,
+            'nodeId': self._node_id,
+            'nodeName': self._node_name
         }
         resp = _post_api_request(req)
         for job in resp['jobs']:
@@ -75,10 +81,11 @@ class Daemon:
         return None
 
 def _load_apps(*, compute_resource_id: str, compute_resource_private_key: str):
+    signature = signature = sign_message({'type': 'computeResource.getPendingJobs'}, compute_resource_id, compute_resource_private_key)
     req = {
         'type': 'computeResource.getApps',
         'computeResourceId': compute_resource_id,
-        'computeResourcePrivateKey': compute_resource_private_key
+        'signature': signature
     }
     resp = _post_api_request(req)
     return [
@@ -102,10 +109,11 @@ def start_compute_resource_node(dir: str):
     daemon.start()
 
 def get_pubsub_subscription(*, compute_resource_id: str, compute_resource_private_key: str) -> str:
+    signature = sign_message({'type': 'computeResource.getPubsubSubscription'}, compute_resource_id, compute_resource_private_key)
     req = {
         'type': 'computeResource.getPubsubSubscription',
         'computeResourceId': compute_resource_id,
-        'computeResourcePrivateKey': compute_resource_private_key
+        'signature': signature
     }
     resp = _post_api_request(req)
     return {
