@@ -2,6 +2,7 @@ import os
 import yaml
 import time
 from pathlib import Path
+import shutil
 from .init_compute_resource_node import env_var_keys
 from ..sdk.App import App
 from ..sdk._post_api_request import _post_api_request
@@ -53,6 +54,7 @@ class Daemon:
         )
     def start(self):
         timer_check_new_jobs = 0
+        timer_cleanup_old_working_dirs = 0
         print('Starting compute resource')
         while True:
             self._check_for_dead_jobs()
@@ -67,10 +69,19 @@ class Daemon:
                 if need_to_check_for_new_jobs:
                     timer_check_new_jobs = time.time()
                     self._check_for_new_jobs()
+            elapsed = time.time() - timer_cleanup_old_working_dirs
+            if elapsed > 300:
+                timer_cleanup_old_working_dirs = time.time()
+                self._cleanup_old_working_dirs()
             time.sleep(0.1)
+    def cleanup(self):
+        for job in self._running_jobs:
+            if job.is_alive():
+                job.cleanup()
     def _check_for_dead_jobs(self):
         for job in self._running_jobs:
             if not job.is_alive():
+                print(f'Removing dead job {job._job_id} {job._processor_name}')
                 self._running_jobs.remove(job)
     def _check_for_new_jobs(self):
         signature = sign_message({'type': 'computeResource.getPendingJobs'}, self._compute_resource_id, self._compute_resource_private_key)
@@ -88,7 +99,8 @@ class Daemon:
             processor_name = job['processorName']
             app = self._find_app_with_processor(processor_name)
             if app is not None:
-                running_job = RunningJob(job_id=job_id, job_private_key=job_private_key, app=app)
+                print(f'Starting job {job_id} {processor_name}')
+                running_job = RunningJob(job_id=job_id, job_private_key=job_private_key, app=app, processor_name=processor_name)
                 running_job.start()
                 self._running_jobs.append(running_job)
             else:
@@ -100,6 +112,17 @@ class Daemon:
                 if p._name == processor_name:
                     return app
         return None
+    def _cleanup_old_working_dirs(self):
+        """Delete working dirs that are more than 24 hours old"""
+        jobs_dir = Path(os.getcwd()) / 'jobs'
+        if not jobs_dir.exists():
+            return
+        for job_dir in jobs_dir.iterdir():
+            if job_dir.is_dir():
+                elapsed = time.time() - job_dir.stat().st_mtime
+                if elapsed > 24 * 60 * 60:
+                    print(f'Removing old working dir {job_dir}')
+                    shutil.rmtree(job_dir)
 
 def _load_apps(*, compute_resource_id: str, compute_resource_private_key: str):
     signature = sign_message({'type': 'computeResource.getApps'}, compute_resource_id, compute_resource_private_key)
@@ -130,7 +153,10 @@ def start_compute_resource_node(dir: str):
             os.environ[k] = the_config[k]
 
     daemon = Daemon(dir=dir)
-    daemon.start()
+    try:
+        daemon.start()
+    finally:
+        daemon.cleanup()
 
 def get_pubsub_subscription(*, compute_resource_id: str, compute_resource_private_key: str) -> str:
     signature = sign_message({'type': 'computeResource.getPubsubSubscription'}, compute_resource_id, compute_resource_private_key)

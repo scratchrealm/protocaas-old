@@ -4,11 +4,9 @@ import queue
 import time
 import subprocess
 from ..sdk._post_api_request import _post_api_request
-from ..sdk.InputFile import InputFile
-from ..sdk.OutputFile import OutputFile
 
 
-# This function is called internally by the compute resource daemin through the protocaas CLI
+# This function is called internally by the compute resource daemon through the protocaas CLI
 # * Sets the job status to running in the database via the API
 # * Runs the job in a separate process by calling the app executable with the appropriate env vars
 # * Monitors the job output, updating the database periodically via the API
@@ -21,7 +19,7 @@ def run_job(*, job_id: str, job_private_key: str, app_executable: str):
     env = os.environ.copy()
     env['JOB_ID'] = job_id
     env['JOB_PRIVATE_KEY'] = job_private_key
-    print('---', cmd, env)
+    print(f'Running {app_executable} (Job ID: {job_id})) (Job private key: {job_private_key})')
     proc = subprocess.Popen(
         cmd,
         env=env,
@@ -31,7 +29,10 @@ def run_job(*, job_id: str, job_private_key: str, app_executable: str):
 
     def output_reader(proc, outq: queue.Queue):
         while True:
-            x = proc.stdout.read(1)
+            try:
+                x = proc.stdout.read(1)
+            except:
+                break
             if len(x) == 0:
                 break
             outq.put(x)
@@ -58,7 +59,6 @@ def run_job(*, job_id: str, job_private_key: str, app_executable: str):
             while True:
                 try:
                     x = outq.get(block=False)
-                    print(x.decode('utf-8'), end='')
 
                     if x == b'\n':
                         last_newline_index_in_output = len(all_output)
@@ -75,35 +75,52 @@ def run_job(*, job_id: str, job_private_key: str, app_executable: str):
                 if elapsed > 10:
                     last_report_console_output_time = time.time()
                     console_output_changed = False
-                    _set_job_console_output(job_id=job_id, job_private_key=job_private_key, console_output=all_output.decode('utf-8'))
+                    try:
+                        _set_job_console_output(job_id=job_id, job_private_key=job_private_key, console_output=all_output.decode('utf-8'))
+                    except Exception as e:
+                        print('WARNING: problem setting console output: ' + str(e))
+                        pass
 
             elapsed = time.time() - last_check_job_exists_time
-            if elapsed > 60:
+            if elapsed > 30:
                 last_check_job_exists_time = time.time()
                 # this should throw an exception if the job does not exist
-                job_status = _get_job_status(job_id=job_id, job_private_key=job_private_key)
+                try:
+                    job_status = _get_job_status(job_id=job_id, job_private_key=job_private_key)
+                except:
+                    raise ValueError('Job does not exist (was probably canceled)')
                 if job_status != 'running':
                     raise ValueError(f'Unexpected job status: {job_status}')
+            time.sleep(5)
         succeeded = True # No exception
     except Exception as e:
         succeeded = False
         error_message = str(e)
     finally:
-        output_reader_thread.join()
         try:
             proc.stdout.close()
             proc.terminate()
         except Exception:
             pass
-    
+        output_reader_thread.join()
     if console_output_changed:
-        _set_job_console_output(job_id=job_id, job_private_key=job_private_key, console_output=all_output.decode('utf-8'))
-    
-    if succeeded:
-        _set_job_status(job_id=job_id, job_private_key=job_private_key, status='completed')
-    else:
-        _set_job_status(job_id=job_id, job_private_key=job_private_key, status='failed', error=error_message)
+        try:
+            _set_job_console_output(job_id=job_id, job_private_key=job_private_key, console_output=all_output.decode('utf-8'))
+        except:
+            print('WARNING: problem setting final console output: ' + str(e))
+            pass
 
+    try:
+        if succeeded:
+            print('Job completed')
+            _set_job_status(job_id=job_id, job_private_key=job_private_key, status='completed')
+        else:
+            print('Job failed: ' + error_message)
+            _set_job_status(job_id=job_id, job_private_key=job_private_key, status='failed', error=error_message)
+    except Exception as e:
+        print('WARNING: problem setting final job status: ' + str(e))
+        pass
+    
 def _get_job_status(*, job_id: str, job_private_key: str) -> str:
     """Get a job from the protocaas API"""
     req = {
@@ -137,5 +154,3 @@ def _set_job_console_output(*, job_id: str, job_private_key: str, console_output
         'consoleOutput': console_output
     }
     resp = _post_api_request(req)
-    if not resp['success']:
-        raise Exception(f'Error setting job console output: {resp["error"]}')
