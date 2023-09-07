@@ -40,6 +40,7 @@ const processorGetOutputUploadUrlHandler = async (request: ProcessorGetOutputUpl
     if (!bucket.credentials) {
         throw new Error('Environment variable not set: OUTPUT_BUCKET_CREDENTIALS')
     }
+
     const signedUploadUrl = await getSignedUploadUrl(bucket, objectKey)
     
     return {

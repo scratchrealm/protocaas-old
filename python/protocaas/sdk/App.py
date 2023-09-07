@@ -116,6 +116,13 @@ class App:
         
         processor_func(**kwargs)
 
+        for output in processor._outputs:
+            output_file = next((o for o in job.outputs if o._name == output.name), None)
+            if output_file is None:
+                raise Exception(f'Output not found: {output.name}')
+            if not output_file._was_set:
+                raise Exception(f'Output was not set: {output.name}')
+
 class TemporaryDirectory:
     """A context manager for temporary directories"""
     def __init__(self):
