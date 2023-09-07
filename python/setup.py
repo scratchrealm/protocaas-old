@@ -11,41 +11,6 @@ long_description = (this_directory / "README.md").read_text()
 
 __version__ = '0.1.3'
 
-# This will be used for both install and develop
-def npm_install_command(command_subclass):
-    """A decorator for classes subclassing one of the setuptools commands.
-
-    It modifies the run() method so that it prints a friendly greeting.
-    """
-    orig_run = command_subclass.run
-
-    def modified_run(self):
-        # Build the Node.js package
-        print("Building Node.js package...")
-        # apparently shell=True is necessary for Windows, but shell=False is necessary for Linux
-        # if we are on windows, we need to use shell=True
-        if os.name == 'nt':
-            shell = True
-        elif os.name == 'posix':
-            shell = False
-        else:
-            print(f'Warning: unrecognized os.name: {os.name}')
-            shell = False
-        subprocess.check_call(['npm', 'install'], cwd=f'{this_directory}/protocaas/js', shell=shell)
-        subprocess.check_call(['npm', 'run', 'build'], cwd=f'{this_directory}/protocaas/js', shell=shell)
-        orig_run(self)
-
-    command_subclass.run = modified_run
-    return command_subclass
-
-@npm_install_command
-class NpmInstallCommand(install):
-    pass
-
-@npm_install_command
-class NpmDevelopCommand(develop):
-    pass
-
 setup(
     name='protocaas',
     version=__version__,
@@ -65,10 +30,6 @@ setup(
         'remfile',
         'pubnub>=7.2.0'
     ],
-    cmdclass={
-        'install': NpmInstallCommand,
-        'develop': NpmDevelopCommand
-    },
     entry_points={
         "console_scripts": [
             "protocaas=protocaas.cli:main",
