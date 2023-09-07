@@ -6,7 +6,7 @@ import Splitter from "../../../components/Splitter";
 import { fetchFile } from "../../../dbInterface/dbInterface";
 import { useGithubAuth } from "../../../GithubAuth/useGithubAuth";
 import { getRemoteH5File, RemoteH5File } from "../../../RemoteH5File/RemoteH5File";
-import { ProtocaasFile } from "../../../types/protocaas-types";
+import { ComputeResourceSpecProcessor, ProtocaasComputeResourceApp, ProtocaasFile } from "../../../types/protocaas-types";
 import { useWorkspace } from "../../WorkspacePage/WorkspacePageContext";
 import { AssetResponse } from "../DandiNwbSelector/types";
 import JobsWindow from "../JobsWindow/JobsWindow";
@@ -136,7 +136,7 @@ const NwbFileEditorChild: FunctionComponent<Props> = ({fileName, width, height})
     }
 
     const {visible: runSpikeSortingWindowVisible, handleOpen: openRunSpikeSortingWindow, handleClose: closeRunSpikeSortingWindow} = useModalDialog()
-    const [selectedSpikeSortingTool, setSelectedSpikeSortingTool] = useState<string | undefined>(undefined)
+    const [selectedSpikeSortingProcessor, setSelectedSpikeSortingProcessor] = useState<string | undefined>(undefined)
 
     return (
         <div style={{position: 'absolute', width, height, background: 'white'}}>
@@ -179,7 +179,7 @@ const NwbFileEditorChild: FunctionComponent<Props> = ({fileName, width, height})
                 electricalSeriesPaths && (
                     electricalSeriesPaths.length > 0 ? (
                         <RunSpikeSortingComponent
-                            onSelect={(processorName) => {setSelectedSpikeSortingTool(processorName); openRunSpikeSortingWindow();}}
+                            onSelect={(processorName) => {setSelectedSpikeSortingProcessor(processorName); openRunSpikeSortingWindow();}}
                         />
                     ) : (
                         <div>No electrical series found</div>
@@ -194,7 +194,7 @@ const NwbFileEditorChild: FunctionComponent<Props> = ({fileName, width, height})
                 <RunSpikeSortingWindow
                     onClose={closeRunSpikeSortingWindow}
                     fileName={fileName}
-                    spikeSortingToolName={selectedSpikeSortingTool}
+                    spikeSortingProcessorName={selectedSpikeSortingProcessor}
                     nwbFile={nwbFile}
                 />
             </ModalWindow>
@@ -207,19 +207,29 @@ type RunSpikeSortingComponentProps = {
 }
 
 const RunSpikeSortingComponent: FunctionComponent<RunSpikeSortingComponentProps> = ({onSelect}) => {
-    const {computeResourceSpec} = useWorkspace()
-    if (!computeResourceSpec) return <div>Loading compute resource spec...</div>
-    const spikeSorterTools = computeResourceSpec.processing_tools.filter(t => (t.tags || []).includes('spike_sorter'))
-    if (spikeSorterTools.length === 0) return <div>No spike sorter tools found</div>
+    const {computeResource} = useWorkspace()
+    const spikeSorterProcessors = useMemo(() => {
+        const ret: ComputeResourceSpecProcessor[] = []
+        for (const app of computeResource?.spec?.apps || []) {
+            for (const p of app.processors || []) {
+                if (p.tags.map(t => t.tag).includes('spike_sorter')) {
+                    ret.push(p)
+                }
+            }
+        }
+        return ret
+    }, [computeResource])
+    if (!computeResource) return <div>Loading compute resource spec...</div>
+    if (spikeSorterProcessors.length === 0) return <div>No spike sorter processors found</div>
     return (
         <div>
             Run spike sorting using:
             <ul>
                 {
-                    spikeSorterTools.map((tool, i) => (
+                    spikeSorterProcessors.map((processor, i) => (
                         <li key={i}>
-                            <Hyperlink onClick={() => {onSelect && onSelect(tool.name)}}>
-                                {tool.attributes.label || tool.name}
+                            <Hyperlink onClick={() => {onSelect && onSelect(processor.name)}}>
+                                {processor.name}
                             </Hyperlink>
                         </li>
                     ))

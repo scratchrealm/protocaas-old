@@ -4,7 +4,6 @@ import { useGithubAuth } from "../../../GithubAuth/useGithubAuth";
 import { useProject } from "../ProjectPageContext";
 import NwbFileEditor from "./NwbFileEditor";
 import ScriptFileEditor from "./ScriptFileEditor";
-import StanFileEditor from "./StanFileEditor";
 import TextFileEditor from "./TextFileEditor";
 
 type Props = {
@@ -64,21 +63,7 @@ const FileEditor: FunctionComponent<Props> = ({fileName, readOnly, fileContent, 
         return () => {canceled = true}
     }, [auth, workspaceId, projectId, fileName, setFileContent])
 
-    if (fileName.endsWith('.stan')) {
-        return (
-            <StanFileEditor
-                fileName={fileName}
-                fileContent={fileContent || ''}
-                onSaveContent={handleSaveContent}
-                editedFileContent={editedFileContent || ''}
-                setEditedFileContent={setEditedFileContent}
-                readOnly={readOnly}
-                width={width}
-                height={height}
-            />
-        )
-    }
-    else if (fileName.endsWith('.py')) {
+    if (fileName.endsWith('.py')) {
         return (
             <ScriptFileEditor
                 fileName={fileName}

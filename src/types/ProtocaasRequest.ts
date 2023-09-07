@@ -653,6 +653,42 @@ export const isDeleteComputeResourceResponse = (x: any): x is DeleteComputeResou
     })
 }
 
+// setComputeResourceApps
+
+export type SetComputeResourceAppsRequest = {
+    type: 'setComputeResourceApps'
+    timestamp: number
+    computeResourceId: string
+    apps: {
+        name: string
+        executablePath: string
+        container?: string
+    }[]
+}
+
+export const isSetComputeResourceAppsRequest = (x: any): x is SetComputeResourceAppsRequest => {
+    return validateObject(x, {
+        type: isEqualTo('setComputeResourceApps'),
+        timestamp: isNumber,
+        computeResourceId: isString,
+        apps: isArrayOf(y => (validateObject(y, {
+            name: isString,
+            executablePath: isString,
+            container: optional(isString)
+        })))
+    })
+}
+
+export type SetComputeResourceAppsResponse = {
+    type: 'setComputeResourceApps'
+}
+
+export const isSetComputeResourceAppsResponse = (x: any): x is SetComputeResourceAppsResponse => {
+    return validateObject(x, {
+        type: isEqualTo('setComputeResourceApps')
+    })
+}
+
 // createJob
 
 export type CreateJobRequest = {
@@ -784,7 +820,7 @@ export const isGetJobsRequest = (x: any): x is GetJobsRequest => {
         type: isEqualTo('getJobs'),
         timestamp: isNumber,
         computeResourceId: optional(isString),
-        status: optional(isOneOf([isEqualTo('pending'), isEqualTo('running'), isEqualTo('completed'), isEqualTo('failed')])),
+        status: optional(isOneOf([isEqualTo('pending'), isEqualTo('starting'), isEqualTo('running'), isEqualTo('completed'), isEqualTo('failed')])),
         projectId: optional(isString),
         nodeId: optional(isString),
         nodeName: optional(isString)
@@ -909,62 +945,6 @@ export const isGetPubsubSubscriptionResponse = (x: any): x is GetPubsubSubscript
     })
 }
 
-// SetComputeResourceSpec
-
-export type SetComputeResourceSpecRequest = {
-    type: 'setComputeResourceSpec'
-    timestamp: number
-    computeResourceId: string
-    spec: ComputeResourceSpec
-}
-
-export const isSetComputeResourceSpecRequest = (x: any): x is SetComputeResourceSpecRequest => {
-    return validateObject(x, {
-        type: isEqualTo('setComputeResourceSpec'),
-        timestamp: isNumber,
-        computeResourceId: isString,
-        spec: isComputeResourceSpec
-    })
-}
-
-export type SetComputeResourceSpecResponse = {
-    type: 'setComputeResourceSpec'
-}
-
-export const isSetComputeResourceSpecResponse = (x: any): x is SetComputeResourceSpecResponse => {
-    return validateObject(x, {
-        type: isEqualTo('setComputeResourceSpec')
-    })
-}
-
-// GetComputeResourceSpec
-
-export type GetComputeResourceSpecRequest = {
-    type: 'getComputeResourceSpec'
-    timestamp: number
-    computeResourceId: string
-}
-
-export const isGetComputeResourceSpecRequest = (x: any): x is GetComputeResourceSpecRequest => {
-    return validateObject(x, {
-        type: isEqualTo('getComputeResourceSpec'),
-        timestamp: isNumber,
-        computeResourceId: isString
-    })
-}
-
-export type GetComputeResourceSpecResponse = {
-    type: 'getComputeResourceSpec'
-    spec: ComputeResourceSpec
-}
-
-export const isGetComputeResourceSpecResponse = (x: any): x is GetComputeResourceSpecResponse => {
-    return validateObject(x, {
-        type: isEqualTo('getComputeResourceSpec'),
-        spec: isComputeResourceSpec
-    })
-}
-
 // ProtocaasRequestPayload
 
 export type ProtocaasRequestPayload =
@@ -990,15 +970,14 @@ export type ProtocaasRequestPayload =
     GetComputeResourceRequest |
     RegisterComputeResourceRequest |
     DeleteComputeResourceRequest |
+    SetComputeResourceAppsRequest |
     CreateJobRequest |
     DeleteJobRequest |
     GetJobRequest |
     GetJobsRequest |
     GetActiveComputeResourceNodesRequest |
     SetJobPropertyRequest |
-    GetPubsubSubscriptionRequest |
-    SetComputeResourceSpecRequest |
-    GetComputeResourceSpecRequest
+    GetPubsubSubscriptionRequest
 
 export const isProtocaasRequestPayload = (x: any): x is ProtocaasRequestPayload => {
     return isOneOf([
@@ -1024,15 +1003,14 @@ export const isProtocaasRequestPayload = (x: any): x is ProtocaasRequestPayload 
         isGetComputeResourceRequest,
         isRegisterComputeResourceRequest,
         isDeleteComputeResourceRequest,
+        isSetComputeResourceAppsRequest,
         isCreateJobRequest,
         isDeleteJobRequest,
         isGetJobRequest,
         isGetJobsRequest,
         isGetActiveComputeResourceNodesRequest,
         isSetJobPropertyRequest,
-        isGetPubsubSubscriptionRequest,
-        isSetComputeResourceSpecRequest,
-        isGetComputeResourceSpecRequest
+        isGetPubsubSubscriptionRequest
     ])(x)
 }
 
@@ -1081,15 +1059,14 @@ export type ProtocaasResponse =
     GetComputeResourceResponse |
     RegisterComputeResourceResponse |
     DeleteComputeResourceResponse |
+    SetComputeResourceAppsResponse |
     CreateJobResponse |
     DeleteJobResponse |
     GetJobResponse |
     GetJobsResponse |
     GetActiveComputeResourceNodesResponse |
     SetJobPropertyResponse |
-    GetPubsubSubscriptionResponse |
-    SetComputeResourceSpecResponse |
-    GetComputeResourceSpecResponse
+    GetPubsubSubscriptionResponse
 
 export const isProtocaasResponse = (x: any): x is ProtocaasResponse => {
     return isOneOf([
@@ -1115,14 +1092,13 @@ export const isProtocaasResponse = (x: any): x is ProtocaasResponse => {
         isGetComputeResourceResponse,
         isRegisterComputeResourceResponse,
         isDeleteComputeResourceResponse,
+        isSetComputeResourceAppsResponse,
         isCreateJobResponse,
         isDeleteJobResponse,
         isGetJobResponse,
         isGetJobsResponse,
         isGetActiveComputeResourceNodesResponse,
         isSetJobPropertyResponse,
-        isGetPubsubSubscriptionResponse,
-        isSetComputeResourceSpecResponse,
-        isGetComputeResourceSpecResponse
+        isGetPubsubSubscriptionResponse
     ])(x)
 }

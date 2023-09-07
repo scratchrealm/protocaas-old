@@ -1,9 +1,9 @@
 import React, { FunctionComponent, PropsWithChildren, useEffect, useMemo } from 'react';
-import { createProject, deleteWorkspace, fetchProjects, fetchWorkspace, getComputeResourceSpec, setWorkspaceProperty, setWorkspaceUsers } from '../../dbInterface/dbInterface';
+import { createProject, deleteWorkspace, fetchProjects, fetchWorkspace, getComputeResource, setWorkspaceProperty, setWorkspaceUsers } from '../../dbInterface/dbInterface';
 import { useGithubAuth } from '../../GithubAuth/useGithubAuth';
 import { setPubNubListenChannel } from '../../pubnub/pubnub';
 import { useSPMain } from '../../SPMainContext';
-import { ComputeResourceSpec, ProtocaasProject, ProtocaasWorkspace } from '../../types/protocaas-types';
+import { ProtocaasComputeResource, ProtocaasProject, ProtocaasWorkspace } from '../../types/protocaas-types';
 
 type Props = {
     workspaceId: string
@@ -19,7 +19,7 @@ type WorkspacePageContextType = {
     setWorkspaceProperty: (property: 'name' | 'publiclyReadable' | 'listed' | 'computeResourceId', value: any) => Promise<void>
     workspaceRole: 'none' | 'admin' | 'editor' | 'viewer' | undefined
     computeResourceId: string | undefined
-    computeResourceSpec: ComputeResourceSpec | undefined
+    computeResource: ProtocaasComputeResource | undefined
 }
 
 const WorkspacePageContext = React.createContext<WorkspacePageContextType>({
@@ -32,7 +32,7 @@ const WorkspacePageContext = React.createContext<WorkspacePageContextType>({
     setWorkspaceProperty: async () => {},
     workspaceRole: undefined,
     computeResourceId: undefined,
-    computeResourceSpec: undefined
+    computeResource: undefined
 })
 
 export const SetupWorkspacePage: FunctionComponent<PropsWithChildren<Props>> = ({children, workspaceId}) => {
@@ -105,16 +105,16 @@ export const SetupWorkspacePage: FunctionComponent<PropsWithChildren<Props>> = (
         }
     }, [workspace?.computeResourceId])
 
-    const [computeResourceSpec, setComputeResourceSpec] = React.useState<ComputeResourceSpec | undefined>(undefined)
+    const [computeResource, setComputeResource] = React.useState<ProtocaasComputeResource | undefined>(undefined)
     useEffect(() => {
         let canceled = false
         const load = async () => {
             if (!workspace) return
             const computeResourceId = workspace.computeResourceId || import.meta.env.VITE_DEFAULT_COMPUTE_RESOURCE_ID
             if (!computeResourceId) return
-            const spec = await getComputeResourceSpec(computeResourceId)
+            const cr = await getComputeResource(computeResourceId)
             if (canceled) return
-            setComputeResourceSpec(spec)
+            setComputeResource(cr)
         }
         load()
         return () => {canceled = true}
@@ -130,8 +130,8 @@ export const SetupWorkspacePage: FunctionComponent<PropsWithChildren<Props>> = (
         setWorkspaceProperty: setWorkspacePropertyHandler,
         workspaceRole,
         computeResourceId: workspace?.computeResourceId || import.meta.env.VITE_DEFAULT_COMPUTE_RESOURCE_ID,
-        computeResourceSpec
-    }), [projects, workspace, createProjectHandler, deleteWorkspaceHandler, setWorkspaceUsersHandler, setWorkspacePropertyHandler, workspaceId, workspaceRole, computeResourceSpec])
+        computeResource
+    }), [projects, workspace, createProjectHandler, deleteWorkspaceHandler, setWorkspaceUsersHandler, setWorkspacePropertyHandler, workspaceId, workspaceRole, computeResource])
 
     return (
         <WorkspacePageContext.Provider value={value}>
@@ -152,6 +152,6 @@ export const useWorkspace = () => {
         setWorkspaceProperty: context.setWorkspaceProperty,
         workspaceRole: context.workspaceRole,
         computeResourceId: context.computeResourceId,
-        computeResourceSpec: context.computeResourceSpec
+        computeResource: context.computeResource
     }
 }

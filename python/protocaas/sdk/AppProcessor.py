@@ -165,7 +165,8 @@ class AppProcessor:
             outputs=_outputs,
             parameters=_parameters,
             attributes=_attributes,
-            tags=_tags
+            tags=_tags,
+            func=processor_func
         )
 
 def _type_to_string(type):

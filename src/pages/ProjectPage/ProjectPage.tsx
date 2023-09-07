@@ -6,7 +6,7 @@ import useRoute from "../../useRoute";
 import { SetupWorkspacePage } from "../WorkspacePage/WorkspacePageContext";
 import DandiNwbSelector from "./DandiNwbSelector/DandiNwbSelector";
 import ManualNwbSelector from "./ManualNwbSelector/ManualNwbSelector";
-import ProcessingToolsView from "./ProcessingToolsView";
+import ProcessorsView from "./ProcessorsView";
 import ProjectFiles from "./ProjectFiles";
 import ProjectHome from "./ProjectHome";
 import ProjectJobs from "./ProjectJobs";
@@ -32,7 +32,7 @@ const ProjectPage: FunctionComponent<Props> = ({projectId, width, height}) => {
     )
 }
 
-export type ProjectPageViewType = 'project-home' | 'project-files' | 'project-jobs' | 'dandi-import' | 'manual-import' | 'processing-tools'
+export type ProjectPageViewType = 'project-home' | 'project-files' | 'project-jobs' | 'dandi-import' | 'manual-import' | 'processors'
 
 type ProjectPageView = {
     type: ProjectPageViewType
@@ -61,8 +61,8 @@ const projectPageViews: ProjectPageView[] = [
         label: 'Manual import'
     },
     {
-        type: 'processing-tools',
-        label: 'Processing tools'
+        type: 'processors',
+        label: 'Processors'
     }
 ]
 
@@ -196,8 +196,8 @@ const MainPanel: FunctionComponent<MainPanelProps> = ({width, height}) => {
                     onNwbFileSelected={handleImportManualNwbFile}
                 />
             </div>
-            <div style={{position: 'absolute', width, height, visibility: currentView === 'processing-tools' ? undefined : 'hidden'}}>
-                <ProcessingToolsView
+            <div style={{position: 'absolute', width, height, visibility: currentView === 'processors' ? undefined : 'hidden'}}>
+                <ProcessorsView
                     width={width}
                     height={height}
                 />

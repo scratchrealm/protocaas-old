@@ -1,12 +1,12 @@
-import { FunctionComponent, useEffect, useMemo, useState } from "react";
+import { FunctionComponent, useCallback, useEffect, useMemo, useState } from "react";
 import ComputeResourceIdComponent from "../../ComputeResourceIdComponent";
-import { fetchComputeResource, fetchJobsForComputeResource } from "../../dbInterface/dbInterface";
+import { fetchComputeResource, fetchJobsForComputeResource, setComputeResourceApps } from "../../dbInterface/dbInterface";
 import { useGithubAuth } from "../../GithubAuth/useGithubAuth";
 import { timeAgoString } from "../../timeStrings";
 import { ProtocaasComputeResource, ProtocaasJob } from "../../types/protocaas-types";
 import UserIdComponent from "../../UserIdComponent";
 import JobsTable from "../ProjectPage/JobsWindow/JobsTable";
-import ComputeResourceJobsTable from "./ComputeResourceJobsTable";
+import ComputeResourceAppsTable from "./ComputeResourceAppsTable";
 
 type Props = {
     width: number
@@ -20,6 +20,11 @@ const ComputeResourcesPage: FunctionComponent<Props> = ({width, height, computeR
     const {accessToken, userId} = useGithubAuth()
     const auth = useMemo(() => (accessToken ? {githubAccessToken: accessToken, userId} : {}), [accessToken, userId])
 
+    const [refreshCode, setRefreshCode] = useState(0)
+    const refreshComputeResource = useCallback(() => {
+        setRefreshCode(c => c + 1)
+    }, [])
+
     useEffect(() => {
         let canceled = false
         ;(async () => {
@@ -28,7 +33,7 @@ const ComputeResourcesPage: FunctionComponent<Props> = ({width, height, computeR
             setComputeResources(cr)
         })()
         return () => {canceled = true}
-    }, [computeResourceId, auth])
+    }, [computeResourceId, auth, refreshCode])
 
     const [jobs, setJobs] = useState<ProtocaasJob[] | undefined>()
 
@@ -46,6 +51,27 @@ const ComputeResourcesPage: FunctionComponent<Props> = ({width, height, computeR
                 return statuses.indexOf(a.status) - statuses.indexOf(b.status)
             }) : undefined
     }, [jobs])
+
+    const handleNewApp = useCallback((name: string, executablePath: string, container: string) => {
+        if (!computeResource) return
+        const oldApps = computeResource.apps
+        const newApps = [...oldApps.filter(a => (a.name !== name)), {name, executablePath, container}]
+        setComputeResourceApps(computeResource.computeResourceId, newApps, auth).then(() => {
+            refreshComputeResource()
+        })
+    }, [computeResource, refreshComputeResource, auth])
+
+    const handleDeleteApps = useCallback((appNames: string[]) => {
+        if (!computeResource) return
+        const oldApps = computeResource.apps
+        const newApps = oldApps.filter(a => !appNames.includes(a.name))
+        setComputeResourceApps(computeResource.computeResourceId, newApps, auth).then(() => {
+            refreshComputeResource()
+        })
+    }, [computeResource, refreshComputeResource, auth])
+
+    const appsTableHeight = 200
+    const jobsTableHeight = 500
 
     return (
         <div style={{padding: 20}}>
@@ -76,9 +102,19 @@ const ComputeResourcesPage: FunctionComponent<Props> = ({width, height, computeR
             <hr />
             <p>Full ID: {computeResource?.computeResourceId}</p>
             <hr />
+            <h4>Apps</h4>
+            {computeResource && <ComputeResourceAppsTable
+                width={width}
+                height={appsTableHeight}
+                computeResource={computeResource}
+                onNewApp={handleNewApp}
+                onDeleteApps={handleDeleteApps}
+            />}
+            <hr />
+            <h4>Jobs</h4>
             <JobsTable
                 width={width}
-                height={height}
+                height={jobsTableHeight}
                 jobs={sortedJobs}
                 fileName={""}
                 onJobClicked={() => {}}

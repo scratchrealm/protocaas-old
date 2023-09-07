@@ -24,7 +24,27 @@ class Daemon:
         if self._compute_resource_private_key is None:
             raise ValueError('Compute resource has not been initialized in this directory, and the environment variable COMPUTE_RESOURCE_PRIVATE_KEY is not set.')
         self._apps = _load_apps(compute_resource_id=self._compute_resource_id, compute_resource_private_key=self._compute_resource_private_key)
+
+        print(f'Loaded apps: {", ".join([app._name for app in self._apps])}')
+
+        spec_apps = []
+        for app in self._apps:
+            spec_apps.append(app.get_spec())
+
+        # Report the compute resource spec
+        print('Reporting the compute resource spec')
+        req = {
+            'type': 'computeResource.setSpec',
+            'computeResourceId': self._compute_resource_id,
+            'signature': sign_message({'type': 'computeResource.setSpec'}, self._compute_resource_id, self._compute_resource_private_key),
+            'spec': {
+                'apps': spec_apps
+            }
+        }
+        _post_api_request(req)
+
         self._running_jobs: list[RunningJob] = []
+        print('Getting pubsub info')
         pubsub_subscription = get_pubsub_subscription(compute_resource_id=self._compute_resource_id, compute_resource_private_key=self._compute_resource_private_key)
         self._pubsub_client = PubsubClient(
             pubnub_subscribe_key=pubsub_subscription['pubnubSubscribeKey'],
@@ -33,6 +53,7 @@ class Daemon:
         )
     def start(self):
         timer_check_new_jobs = 0
+        print('Starting compute resource')
         while True:
             self._check_for_dead_jobs()
             num_running_jobs = len(self._running_jobs)
@@ -81,17 +102,20 @@ class Daemon:
         return None
 
 def _load_apps(*, compute_resource_id: str, compute_resource_private_key: str):
-    signature = signature = sign_message({'type': 'computeResource.getPendingJobs'}, compute_resource_id, compute_resource_private_key)
+    signature = sign_message({'type': 'computeResource.getApps'}, compute_resource_id, compute_resource_private_key)
     req = {
         'type': 'computeResource.getApps',
         'computeResourceId': compute_resource_id,
         'signature': signature
     }
     resp = _post_api_request(req)
-    return [
-        App.from_executable(a['executablePath'])
-        for a in resp['apps']
-    ]
+    ret = []
+    for a in resp['apps']:
+        print(f'Loading app {a["executablePath"]}')
+        app = App.from_executable(a['executablePath'])
+        print(f'  {len(app._processors)} processors')
+        ret.append(app)
+    return ret
 
 def start_compute_resource_node(dir: str):
     config_fname = os.path.join(dir, '.protocaas-compute-resource-node.yaml')
@@ -116,6 +140,4 @@ def get_pubsub_subscription(*, compute_resource_id: str, compute_resource_privat
         'signature': signature
     }
     resp = _post_api_request(req)
-    return {
-        'subscription': resp['subscription']
-    }
+    return resp['subscription']

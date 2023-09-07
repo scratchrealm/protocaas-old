@@ -115,7 +115,7 @@ export const isProtocaasJob = (x: any): x is ProtocaasJob => {
         }))),
         timestampCreated: isNumber,
         computeResourceId: isString,
-        status: isOneOf([isEqualTo('pending'), isEqualTo('queued'), isEqualTo('running'), isEqualTo('completed'), isEqualTo('failed')]),
+        status: isOneOf([isEqualTo('pending'), isEqualTo('queued'), isEqualTo('starting'), isEqualTo('running'), isEqualTo('completed'), isEqualTo('failed')]),
         error: optional(isString),
         processVersion: optional(isString),
         computeResourceNodeId: optional(isString),
@@ -176,16 +176,19 @@ export const isProtocaasDataBlob = (x: any): x is ProtocaasDataBlob => {
     })
 }
 
+export type ProtocaasComputeResourceApp = {
+    name: string
+    executablePath: string
+    container?: string
+}
+
 export type ProtocaasComputeResource = {
     computeResourceId: string
     ownerId: string
     name: string
     timestampCreated: number
-    apps: {
-        name: string
-        executablePath: string
-        container?: string
-    }[]
+    apps: ProtocaasComputeResourceApp[]
+    spec?: ComputeResourceSpec
 }
 
 export const isProtocaasComputeResource = (x: any): x is ProtocaasComputeResource => {
@@ -198,52 +201,79 @@ export const isProtocaasComputeResource = (x: any): x is ProtocaasComputeResourc
             name: isString,
             executablePath: isString,
             container: optional(isString)
-        })))
+        }))),
+        spec: optional(isComputeResourceSpec)
     })
 }
 
-export type ProcessingToolSchema = {
-    description?: string
-    properties: {
+export type ComputeResourceSpecProcessorParameter = {
+    name: string
+    help: string
+    type: string
+    default?: any
+}
+
+export type ComputeResourceSpecProcessor = {
+    name: string
+    help: string
+    inputs: {
         name: string
-        type: string
-        description?: string
-        default?: any
-        choices?: any[]
-        group?: string
+        help: string
+    }[]
+    outputs: {
+        name: string
+        help: string
+    }[]
+    parameters: ComputeResourceSpecProcessorParameter[]
+    attributes: {
+        name: string
+        value: any
+    }[]
+    tags: {
+        tag: string
     }[]
 }
 
-export const isProcessingToolSchema = (x: any): x is ProcessingToolSchema => {
-    return validateObject(x, {
-        description: optional(isString),
-        properties: isArrayOf(y => (validateObject(y, {
-            name: isString,
-            type: isString,
-            description: optional(isString),
-            default: optional(() => true),
-            choices: optional(() => true),
-            group: optional(isString)
-        })))
-    })
+export type ComputeResourceSpecApp = {
+    name: string
+    help: string
+    processors: ComputeResourceSpecProcessor[]
 }
 
 export type ComputeResourceSpec = {
-    processing_tools: {
-        name: string
-        attributes: any
-        tags: string[]
-        schema: ProcessingToolSchema
-    }[]
+    apps: ComputeResourceSpecApp[]
 }
 
 export const isComputeResourceSpec = (x: any): x is ComputeResourceSpec => {
     return validateObject(x, {
-        processing_tools: isArrayOf(y => (validateObject(y, {
+        apps: isArrayOf(y => (validateObject(y, {
             name: isString,
-            attributes: () => true,
-            tags: optional(isArrayOf(isString)),
-            schema: isProcessingToolSchema
+            help: isString,
+            processors: isArrayOf(z => (validateObject(z, {
+                name: isString,
+                help: isString,
+                inputs: isArrayOf(a => (validateObject(a, {
+                    name: isString,
+                    help: isString
+                }))),
+                outputs: isArrayOf(a => (validateObject(a, {
+                    name: isString,
+                    help: isString
+                }))),
+                parameters: isArrayOf(a => (validateObject(a, {
+                    name: isString,
+                    help: isString,
+                    type: isString,
+                    default: optional(() => true)
+                }))),
+                attributes: isArrayOf(a => (validateObject(a, {
+                    name: isString,
+                    value: () => (true)
+                }))),
+                tags: isArrayOf(a => (validateObject(a, {
+                    tag: isString
+                })))
+            })))
         })))
     })
 }

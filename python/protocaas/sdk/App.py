@@ -84,7 +84,7 @@ class App:
             with open(spec_fname, 'r') as f:
                 spec = json.load(f)
             a = App.from_spec(spec)
-            setattr('_executable_path', executable_path)
+            setattr(a, '_executable_path', executable_path)
             return a
     def _run_job(self, *, job_id: str, job_private_key: str):
         job: Job = _get_job(job_id=job_id, job_private_key=job_private_key)
@@ -93,6 +93,8 @@ class App:
         if not hasattr(processor, '_processor_func'):
             raise Exception(f'Processor does not have a _processor_func attribute: {processor_name}')
         processor_func = processor._processor_func
+        if processor_func is None:
+            raise Exception(f'processor_func is None')
 
         kwargs = {}
         for input in processor._inputs:

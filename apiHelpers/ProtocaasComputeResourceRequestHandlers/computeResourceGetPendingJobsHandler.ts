@@ -1,5 +1,6 @@
 import { isProtocaasComputeResource, isProtocaasJob, ProtocaasJob } from "../../src/types/protocaas-types"
 import { getMongoClient } from "../getMongoClient"
+import JSONStringifyDeterministic from "../jsonStringifyDeterministic"
 import removeIdField from "../removeIdField"
 import verifySignature from "../verifySignature"
 import { ComputeResourceGetPendingJobsRequest, ComputeResourceGetPendingJobsResponse } from "./ProtocaasComputeResourceRequest"
@@ -13,9 +14,9 @@ const computeResourceGetPendingJobsHandler = async (request: ComputeResourceGetP
         console.warn(computeResource)
         throw new Error('Invalid compute resource in database (5)')
     }
-    const okay = await verifySignature({type: 'computeResource.getPendingJobs'}, computeResource.computeResourceId, request.signature)
+    const okay = await verifySignature(JSONStringifyDeterministic({type: 'computeResource.getPendingJobs'}), computeResource.computeResourceId, request.signature)
     if (!okay) {
-        throw new Error('Invalid signature')
+        throw new Error('Invalid signature for computeResource.getPendingJobs')
     }
 
     const jobsCollection = client.db('protocaas').collection('jobs')

@@ -15,7 +15,7 @@ def attribute(name: str, value: str):
         if not hasattr(func, 'protocaas_attributes'):
             setattr(func, 'protocaas_attributes', [])
         attributes: list = getattr(func, 'protocaas_attributes')
-        attributes.append({'name': name, 'value': value})
+        attributes.insert(0, {'name': name, 'value': value})
         return func
     return decorator
 
@@ -25,7 +25,8 @@ def tags(tag_list: List[str]):
         if not hasattr(func, 'protocaas_tags'):
             setattr(func, 'protocaas_tags', [])
         tags: list = getattr(func, 'protocaas_tags')
-        tags.extend(tag_list)
+        for tag in tag_list[::-1]:
+            tags.insert(0, tag)
         return func
     return decorator
 
@@ -35,7 +36,7 @@ def input(name, help=None):
         if not hasattr(func, 'protocaas_inputs'):
             setattr(func, 'protocaas_inputs', [])
         inputs: list = getattr(func, 'protocaas_inputs')
-        inputs.append({'name': name, 'help': help})
+        inputs.insert(0, {'name': name, 'help': help})
         return func
     return decorator
 
@@ -45,7 +46,7 @@ def output(name, help=None):
         if not hasattr(func, 'protocaas_outputs'):
             setattr(func, 'protocaas_outputs', [])
         outputs: list = getattr(func, 'protocaas_outputs')
-        outputs.append({'name': name, 'help': help})
+        outputs.insert(0, {'name': name, 'help': help})
         return func
     return decorator
 
@@ -55,6 +56,6 @@ def parameter(name, *, help: str, type, default=_NO_DEFAULT):
         if not hasattr(func, 'protocaas_parameters'):
             setattr(func, 'protocaas_parameters', [])
         parameters: list = getattr(func, 'protocaas_parameters')
-        parameters.append({'name': name, 'help': help, 'type': type, 'default': default})
+        parameters.insert(0, {'name': name, 'help': help, 'type': type, 'default': default})
         return func
     return decorator

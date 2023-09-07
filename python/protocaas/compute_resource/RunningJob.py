@@ -1,6 +1,6 @@
 import subprocess
 from ..sdk.App import App
-from ..sdk._post_api_request import App, _post_api_request
+from ..sdk._post_api_request import _post_api_request
 
 
 class RunningJob:
@@ -22,7 +22,7 @@ class RunningJob:
         if not hasattr(self._app, '_executable_path'):
             raise Exception(f'App does not have an executable path')
         executable_path: str = self._app._executable_path
-        cmd = ['protocaas', '--job-id', self._job_id, '--job-private-key', self._job_private_key, '--app-executable', executable_path]
+        cmd = ['protocaas', 'run-job', '--job-id', self._job_id, '--job-private-key', self._job_private_key, '--executable-path', executable_path]
         self._process = subprocess.Popen(cmd)
     def is_alive(self):
         return self._process.poll() is None

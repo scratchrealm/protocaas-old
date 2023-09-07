@@ -1,28 +1,28 @@
-.ProcessingTool {
+.Processor {
 }
 
-.ProcessingTool:hover {
+.Processor:hover {
     background: #eee;
 }
 
-.ProcessingToolImage {
+.ProcessorImage {
 }
 
-.ProcessingToolTitle {
+.ProcessorTitle {
     font-size: 20px;
     font-weight: bold;
 }
 
-.ProcessingToolDescription {
+.ProcessorDescription {
     font-size: 16px;
 }
 
-.ProcessingToolParameters {
+.ProcessorParameters {
     font-size: 14px;
     color: #444;
 }
 
-.ProcessingToolTags {
+.ProcessorTags {
     font-size: 14px;
     color: #444;
 }

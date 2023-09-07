@@ -1,24 +1,17 @@
 import { FunctionComponent, useCallback, useEffect, useMemo } from "react";
 import { ProtocaasProcessingJobDefinition } from "../../../../dbInterface/dbInterface";
 import { RemoteH5File } from "../../../../RemoteH5File/RemoteH5File";
-import { ProcessingToolSchema } from "../../../../types/protocaas-types";
-import { ProcessingToolSchemaParameter, ProcessingToolSchemaParser } from "../../ProcessingToolsView";
+import { ComputeResourceSpecProcessor, ComputeResourceSpecProcessorParameter } from "../../../../types/protocaas-types";
 import { useElectricalSeriesPaths } from "../NwbFileEditor";
 
 type EditJobDefinitionWindowProps = {
     jobDefinition: ProtocaasProcessingJobDefinition | undefined
     setJobDefinition: (jobDefinition: ProtocaasProcessingJobDefinition | undefined) => void
-    processingTool: {
-        name: string
-        attributes: any
-        tags: string[]
-        schema: ProcessingToolSchema
-    }
+    processor: ComputeResourceSpecProcessor
     nwbFile?: RemoteH5File
 }
 
-const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> = ({jobDefinition, setJobDefinition, processingTool, nwbFile}) => {
-    const pt = useMemo(() => (new ProcessingToolSchemaParser(processingTool.schema)), [processingTool.schema])
+const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> = ({jobDefinition, setJobDefinition, processor, nwbFile}) => {
     const setParameterValue = useCallback((name: string, value: any) => {
         if (!jobDefinition) return
         const newJobDefinition: ProtocaasProcessingJobDefinition = {
@@ -37,27 +30,27 @@ const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> =
     }, [jobDefinition, setJobDefinition])
     const rows = useMemo(() => {
         const ret: any[] = []
-        pt.inputs.forEach(input => {
+        processor.inputs.forEach(input => {
             ret.push(
                 <InputRow
                     key={input.name}
                     name={input.name}
-                    description={input.description}
+                    description={input.help}
                     value={jobDefinition?.inputFiles.find(f => (f.name === input.name))?.fileName}
                 />
             )
         })
-        pt.outputs.forEach(output => {
+        processor.outputs.forEach(output => {
             ret.push(
                 <OutputRow
                     key={output.name}
                     name={output.name}
-                    description={output.description}
+                    description={output.help}
                     value={jobDefinition?.outputFiles.find(f => (f.name === output.name))?.fileName}
                 />
             )
         })
-        pt.parameters.forEach(parameter => {
+        processor.parameters.forEach(parameter => {
             ret.push(
                 <ParameterRow
                     key={parameter.name}
@@ -71,7 +64,7 @@ const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> =
             )
         })
         return ret
-    }, [pt, jobDefinition, nwbFile, setParameterValue])
+    }, [processor, jobDefinition, nwbFile, setParameterValue])
     return (
         <div>
             <table className="table1">
@@ -116,14 +109,14 @@ const OutputRow: FunctionComponent<OutputRowProps> = ({name, description, value}
 }
 
 type ParameterRowProps = {
-    parameter: ProcessingToolSchemaParameter
+    parameter: ComputeResourceSpecProcessorParameter
     value?: string
     nwbFile?: RemoteH5File
     setValue: (value: any) => void
 }
 
 const ParameterRow: FunctionComponent<ParameterRowProps> = ({parameter, value, nwbFile, setValue}) => {
-    const {type, name, description} = parameter
+    const {type, name, help} = parameter
     return (
         <tr>
             <td title={`${name} (${type})`}>{name}</td>
@@ -135,13 +128,13 @@ const ParameterRow: FunctionComponent<ParameterRowProps> = ({parameter, value, n
                     setValue={setValue}
                 />
             </td>
-            <td>{description}</td>
+            <td>{help}</td>
         </tr>
     )
 }
 
 type EditParameterValueProps = {
-    parameter: ProcessingToolSchemaParameter
+    parameter: ComputeResourceSpecProcessorParameter
     value?: string
     nwbFile?: RemoteH5File
     setValue: (value: any) => void
@@ -165,16 +158,17 @@ const EditParameterValue: FunctionComponent<EditParameterValueProps> = ({paramet
         return <input type="checkbox" checked={value === 'true'} onChange={evt => {setValue(evt.target.checked ? 'true' : 'false')}} />
     }
     else if (type === 'Enum') {
-        const choices = parameter.choices || []
-        return (
-            <select value={value} onChange={evt => {setValue(evt.target.value)}}>
-                {
-                    choices.map(choice => (
-                        <option key={choice} value={choice}>{choice}</option>
-                    ))
-                }
-            </select>
-        )
+        return <div>Enum not implemented yet</div>
+        // const choices = parameter.choices || []
+        // return (
+        //     <select value={value} onChange={evt => {setValue(evt.target.value)}}>
+        //         {
+        //             choices.map(choice => (
+        //                 <option key={choice} value={choice}>{choice}</option>
+        //             ))
+        //         }
+        //     </select>
+        // )
     }
     else {
         return <div>Unsupported type: {type}</div>

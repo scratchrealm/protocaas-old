@@ -21,6 +21,7 @@ def run_job(*, job_id: str, job_private_key: str, app_executable: str):
     env = os.environ.copy()
     env['JOB_ID'] = job_id
     env['JOB_PRIVATE_KEY'] = job_private_key
+    print('---', cmd, env)
     proc = subprocess.Popen(
         cmd,
         env=env,
@@ -50,7 +51,7 @@ def run_job(*, job_id: str, job_private_key: str, app_executable: str):
             try:
                 retcode = proc.wait(1)
                 if retcode != 0:
-                    raise ValueError(f'Error running job: {retcode}')
+                    raise ValueError(f'Error running job: return code {retcode}')
                 break
             except subprocess.TimeoutExpired:
                 pass
@@ -94,6 +95,9 @@ def run_job(*, job_id: str, job_private_key: str, app_executable: str):
             proc.terminate()
         except Exception:
             pass
+    
+    if console_output_changed:
+        _set_job_console_output(job_id=job_id, job_private_key=job_private_key, console_output=all_output.decode('utf-8'))
     
     if succeeded:
         _set_job_status(job_id=job_id, job_private_key=job_private_key, status='completed')

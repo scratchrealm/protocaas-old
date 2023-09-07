@@ -1,4 +1,5 @@
 import validateObject, { isArrayOf, isBoolean, isEqualTo, isNumber, isOneOf, isString, optional } from "../../src/types/validateObject";
+import {ComputeResourceSpec, isComputeResourceSpec} from "../../src/types/protocaas-types"
 
 // computeResource.getPendingJobs
 
@@ -112,30 +113,62 @@ export const isComputeResourceGetPubsubSubscriptionResponse = (x: any): x is Com
     })
 }
 
+// computeResource.setSpec
+
+export type ComputeResourceSetSpecRequest = {
+    type: 'computeResource.setSpec'
+    computeResourceId: string
+    signature: string
+    spec?: ComputeResourceSpec
+}
+
+export const isComputeResourceSetSpecRequest = (x: any): x is ComputeResourceSetSpecRequest => {
+    return validateObject(x, {
+        type: isEqualTo('computeResource.setSpec'),
+        computeResourceId: isString,
+        signature: isString,
+        spec: optional(isComputeResourceSpec)
+    })
+}
+
+export type ComputeResourceSetSpecResponse = {
+    type: 'computeResource.setSpec'
+}
+
+export const isComputeResourceSetSpecResponse = (x: any): x is ComputeResourceSetSpecResponse => {
+    return validateObject(x, {
+        type: isEqualTo('computeResource.setSpec')
+    })
+}
+
 //////////////////////////////////////////////////////////////////////////////
 
 export type ProtocaasComputeResourceRequest =
     ComputeResourceGetPendingJobsRequest |
     ComputeResourceGetAppsRequest |
-    ComputeResourceGetPubsubSubscriptionRequest
+    ComputeResourceGetPubsubSubscriptionRequest |
+    ComputeResourceSetSpecRequest
 
 export const isProtocaasComputeResourceRequest = (x: any): x is ProtocaasComputeResourceRequest => {
     return isOneOf([
         isComputeResourceGetPendingJobsRequest,
         isComputeResourceGetAppsRequest,
-        isComputeResourceGetPubsubSubscriptionRequest
+        isComputeResourceGetPubsubSubscriptionRequest,
+        isComputeResourceSetSpecRequest
     ])(x)
 }
 
 export type ProtocaasComputeResourceResponse =
     ComputeResourceGetPendingJobsResponse |
     ComputeResourceGetAppsResponse |
-    ComputeResourceGetPubsubSubscriptionResponse
+    ComputeResourceGetPubsubSubscriptionResponse |
+    ComputeResourceSetSpecResponse
 
 export const isProtocaasComputeResourceResponse = (x: any): x is ProtocaasComputeResourceResponse => {
     return isOneOf([
         isComputeResourceGetPendingJobsResponse,
         isComputeResourceGetAppsResponse,
-        isComputeResourceGetPubsubSubscriptionResponse
+        isComputeResourceGetPubsubSubscriptionResponse,
+        isComputeResourceSetSpecResponse
     ])(x)
 }

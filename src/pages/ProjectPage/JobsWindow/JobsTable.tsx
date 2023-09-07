@@ -37,7 +37,7 @@ const JobsTable: FunctionComponent<Props> = ({ width, height, fileName, jobs, on
     const colWidth = 15
 
     return (
-        <div style={{position: 'absolute', width, height}}>
+        <div style={{position: 'relative', width, height}}>
             <div style={{position: 'absolute', width: width - hPadding * 2, height: menuBarHeight - vPadding * 2, paddingLeft: hPadding, paddingRight: hPadding, paddingTop: vPadding, paddingBottom: vPadding}}>
                 <JobsTableMenuBar
                     width={width - hPadding * 2}

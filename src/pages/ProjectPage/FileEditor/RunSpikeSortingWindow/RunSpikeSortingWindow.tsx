@@ -3,24 +3,29 @@ import { createJob, ProtocaasProcessingJobDefinition } from "../../../../dbInter
 import { useGithubAuth } from "../../../../GithubAuth/useGithubAuth"
 import { RemoteH5File } from "../../../../RemoteH5File/RemoteH5File"
 import { useWorkspace } from "../../../WorkspacePage/WorkspacePageContext"
-import { ProcessingToolSchemaParser } from "../../ProcessingToolsView"
 import { useProject } from "../../ProjectPageContext"
 import EditJobDefinitionWindow from "./EditJobDefinitionWindow"
 
 type RunSpikeSortingWindowProps = {
     fileName: string
     onClose: () => void
-    spikeSortingToolName?: string
+    spikeSortingProcessorName?: string
     nwbFile?: RemoteH5File
 }
 
-const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({fileName, onClose, spikeSortingToolName, nwbFile}) => {
+const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({fileName, onClose, spikeSortingProcessorName, nwbFile}) => {
     const {projectId, workspaceId} = useProject()
-    const {computeResourceSpec} = useWorkspace()
+    const {computeResource} = useWorkspace()
 
-    const spikeSortingTool = useMemo(() => {
-        return computeResourceSpec?.processing_tools.find(tool => (tool.name === spikeSortingToolName))
-    }, [computeResourceSpec, spikeSortingToolName])
+    const allProcessors = useMemo(() => {
+        if (!computeResource) return []
+        if (!computeResource.spec) return []
+        return computeResource.spec.apps.map(app => (app.processors || [])).flat()
+    }, [computeResource])
+
+    const processor = useMemo(() => {
+        return allProcessors.find(p => (p.name === spikeSortingProcessorName))
+    }, [allProcessors, spikeSortingProcessorName])
 
     const [submitting, setSubmitting] = useState<boolean>(false)
 
@@ -29,8 +34,7 @@ const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({f
 
     const [jobDefinition, setJobDefinition] = useState<ProtocaasProcessingJobDefinition | undefined>(undefined)
     useEffect(() => {
-        if (!spikeSortingTool) return
-        const ss = new ProcessingToolSchemaParser(spikeSortingTool.schema)
+        if (!processor) return
         const jd: ProtocaasProcessingJobDefinition = {
             inputFiles: [
                 {
@@ -41,20 +45,20 @@ const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({f
             outputFiles: [
                 {
                     name: 'output',
-                    fileName: `.${spikeSortingTool.name}/${fileName}`
+                    fileName: `.${processor.name}/${fileName}`
                 }
             ],
-            inputParameters: ss.parameters.map(p => ({
+            inputParameters: processor.parameters.map(p => ({
                 name: p.name,
                 value: p.default
             })),
-            processorName: spikeSortingTool.name
+            processorName: processor.name
         }
         setJobDefinition(jd)
-    }, [spikeSortingTool, fileName])
+    }, [processor, fileName])
 
     const handleSubmit = useCallback(async () => {
-        if (!spikeSortingToolName) return
+        if (!spikeSortingProcessorName) return
         if (!jobDefinition) return
         setSubmitting(true)
         try {
@@ -64,7 +68,7 @@ const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({f
         finally {
             setSubmitting(false)
         }
-    }, [spikeSortingToolName, jobDefinition, workspaceId, projectId, auth, onClose])
+    }, [workspaceId, projectId, jobDefinition, auth, spikeSortingProcessorName, onClose])
 
     const submitEnabled = !submitting
 
@@ -76,7 +80,7 @@ const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({f
         <div>
             <h3>Run spike sorting</h3>
             <div>
-                Spike sorter: {spikeSortingTool?.attributes.label || spikeSortingTool?.name}
+                Spike sorter: {processor?.name}
             </div>
             <div>&nbsp;</div>
             <div>
@@ -84,10 +88,10 @@ const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({f
             </div>
             <hr />
             {
-                spikeSortingTool && <EditJobDefinitionWindow
+                processor && <EditJobDefinitionWindow
                     jobDefinition={jobDefinition}
                     setJobDefinition={setJobDefinition}
-                    processingTool={spikeSortingTool}
+                    processor={processor}
                     nwbFile={nwbFile}
                 />
             }

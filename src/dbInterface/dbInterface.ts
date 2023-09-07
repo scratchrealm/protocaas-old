@@ -1,4 +1,4 @@
-import { CreateProjectRequest, CreateJobRequest, CreateWorkspaceRequest, DeleteFileRequest, DeleteProjectRequest, DeleteComputeResourceRequest, DeleteJobRequest, DeleteWorkspaceRequest, GetProjectsRequest, GetFileRequest, GetFilesRequest, GetProjectRequest, GetComputeResourcesRequest, GetDataBlobRequest, GetJobRequest, GetJobsRequest, GetWorkspaceRequest, GetWorkspacesRequest, RegisterComputeResourceRequest, SetFileRequest, SetProjectPropertyRequest, SetWorkspacePropertyRequest, SetWorkspaceUsersRequest, DuplicateFileRequest, RenameFileRequest, GetComputeResourceRequest, GetComputeResourceSpecRequest } from "../types/ProtocaasRequest";
+import { CreateProjectRequest, CreateJobRequest, CreateWorkspaceRequest, DeleteFileRequest, DeleteProjectRequest, DeleteComputeResourceRequest, DeleteJobRequest, DeleteWorkspaceRequest, GetProjectsRequest, GetFileRequest, GetFilesRequest, GetProjectRequest, GetComputeResourcesRequest, GetDataBlobRequest, GetJobRequest, GetJobsRequest, GetWorkspaceRequest, GetWorkspacesRequest, RegisterComputeResourceRequest, SetFileRequest, SetProjectPropertyRequest, SetWorkspacePropertyRequest, SetWorkspaceUsersRequest, DuplicateFileRequest, RenameFileRequest, GetComputeResourceRequest, SetComputeResourceAppsRequest } from "../types/ProtocaasRequest";
 import { ProtocaasProject, ProtocaasFile, ProtocaasComputeResource, ProtocaasJob, ProtocaasWorkspace } from "../types/protocaas-types";
 import postProtocaasRequest from "./postProtocaasRequest";
 
@@ -374,6 +374,25 @@ export const deleteComputeResource = async (computeResourceId: string, auth: Aut
     }
 }
 
+type App = {
+    name: string
+    executablePath: string
+    container?: string
+}
+
+export const setComputeResourceApps = async (computeResourceId: string, apps: App[], auth: Auth): Promise<void> => {
+    const req: SetComputeResourceAppsRequest = {
+        type: 'setComputeResourceApps',
+        timestamp: Date.now() / 1000,
+        computeResourceId,
+        apps
+    }
+    const resp = await postProtocaasRequest(req, {...auth})
+    if (resp.type !== 'setComputeResourceApps') {
+        throw Error(`Unexpected response type ${resp.type}. Expected setComputeResourceApps.`)
+    }
+}
+
 export type ProtocaasProcessingJobDefinition = {
     processorName: string,
     inputFiles: {
@@ -466,15 +485,15 @@ export const fetchJob = async (jobId: string, auth: Auth): Promise<ProtocaasJob 
     return resp.job
 }
 
-export const getComputeResourceSpec = async (computeResourceId: string): Promise<any> => {
-    const req: GetComputeResourceSpecRequest = {
-        type: 'getComputeResourceSpec',
+export const getComputeResource = async (computeResourceId: string): Promise<any> => {
+    const req: GetComputeResourceRequest = {
+        type: 'getComputeResource',
         timestamp: Date.now() / 1000,
         computeResourceId
     }
     const resp = await postProtocaasRequest(req, {})
-    if (resp.type !== 'getComputeResourceSpec') {
+    if (resp.type !== 'getComputeResource') {
         throw Error(`Unexpected response type ${resp.type}. Expected getComputeResource.`)
     }
-    return resp.spec
+    return resp.computeResource
 }
