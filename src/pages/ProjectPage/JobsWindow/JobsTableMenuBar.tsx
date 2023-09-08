@@ -9,12 +9,11 @@ type JobsTableMenuBarProps = {
     height: number
     selectedJobIds: string[]
     onResetSelection: () => void
-    onCreateJob?: () => void
     createJobEnabled?: boolean
     createJobTitle?: string
 }
 
-const JobsTableMenuBar: FunctionComponent<JobsTableMenuBarProps> = ({width, height, selectedJobIds, onResetSelection, onCreateJob, createJobEnabled, createJobTitle}) => {
+const JobsTableMenuBar: FunctionComponent<JobsTableMenuBarProps> = ({width, height, selectedJobIds, onResetSelection, createJobEnabled, createJobTitle}) => {
     const {deleteJob, refreshJobs} = useProject()
     const [operating, setOperating] = useState(false)
     const handleDelete = useCallback(async () => {
@@ -35,18 +34,6 @@ const JobsTableMenuBar: FunctionComponent<JobsTableMenuBarProps> = ({width, heig
 
     return (
         <div>
-            {onCreateJob && (
-                <span>
-                    <SmallIconButton
-                        icon={<PlayArrow />}
-                        disabled={operating || !createJobEnabled}
-                        title={createJobTitle || "Create a new job"}
-                        label="Create job"
-                        onClick={onCreateJob}
-                    />
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                </span>
-            )}
             <SmallIconButton
                 icon={<Delete />}
                 disabled={(selectedJobIds.length === 0) || operating}

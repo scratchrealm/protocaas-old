@@ -1,10 +1,12 @@
-import { FunctionComponent, useCallback, useEffect, useMemo, useState } from "react";
+import { FunctionComponent, PropsWithChildren, useCallback, useEffect, useMemo, useState } from "react";
 import ComputeResourceIdComponent from "../../../ComputeResourceIdComponent";
-import { fetchJob } from "../../../dbInterface/dbInterface";
+import { defaultJobDefinition, fetchJob, ProtocaasProcessingJobDefinition } from "../../../dbInterface/dbInterface";
 import { useGithubAuth } from "../../../GithubAuth/useGithubAuth";
 import { ProtocaasJob } from "../../../types/protocaas-types";
 import UserIdComponent from "../../../UserIdComponent";
+import EditJobDefinitionWindow from "../FileEditor/RunSpikeSortingWindow/EditJobDefinitionWindow";
 import { useProject } from "../ProjectPageContext";
+import OutputsTable from "./OutputsTable";
 
 type Props = {
     width: number,
@@ -41,6 +43,25 @@ const useJob = (jobId: string) => {
 
 const JobView: FunctionComponent<Props> = ({ width, height, jobId }) => {
     const {job, refreshJob} = useJob(jobId)
+    const jobDefinition: ProtocaasProcessingJobDefinition = useMemo(() => {
+        if (!job) return defaultJobDefinition
+        const ret: ProtocaasProcessingJobDefinition = {
+            inputFiles: job.inputFiles.map(f => ({
+                name: f.name,
+                fileName: f.fileName
+            })),
+            outputFiles: job.outputFiles.map(f => ({
+                name: f.name,
+                fileName: f.fileName
+            })),
+            inputParameters: job.inputParameters.map(p => ({
+                name: p.name,
+                value: p.value
+            })),
+            processorName: job.processorName
+        }
+        return ret
+    }, [job])
     if (!job) {
         return (
             <p>Loading job {jobId}</p>
@@ -48,6 +69,8 @@ const JobView: FunctionComponent<Props> = ({ width, height, jobId }) => {
     }
     return (
         <div style={{position: 'absolute', width, height, background: 'white', overflowY: 'auto'}}>
+            <hr />
+            <button onClick={refreshJob}>Refresh</button>
             <hr />
             <table className="table1">
                 <tbody>
@@ -86,12 +109,43 @@ const JobView: FunctionComponent<Props> = ({ width, height, jobId }) => {
                 </tbody>
             </table>
             <hr />
-            <button onClick={refreshJob}>Refresh</button>
+            <h3>Outputs</h3>
+            <OutputsTable job={job} />
             <hr />
-            <h3>Console output</h3>
-            <pre>
-                {job.consoleOutput}
-            </pre>
+            <ExpandableSection title="Parameters">
+                <EditJobDefinitionWindow
+                    processor={job.processorSpec}
+                    jobDefinition={jobDefinition}
+                    readOnly={true}
+                />
+            </ExpandableSection>
+            <hr />
+            <ExpandableSection title="Console output">
+                <pre>
+                    {job.consoleOutput}
+                </pre>
+            </ExpandableSection>
+            <hr />
+        </div>
+    )
+}
+
+type ExpandableSectionProps = {
+    title: string
+}
+
+const ExpandableSection: FunctionComponent<PropsWithChildren<ExpandableSectionProps>> = ({ title, children }) => {
+    const [expanded, setExpanded] = useState(false)
+    return (
+        <div>
+            <div style={{ cursor: 'pointer' }} onClick={() => { setExpanded(!expanded) }}>{expanded ? '▼' : '►'} {title}</div>
+            {
+                expanded && (
+                    <div>
+                        {children}
+                    </div>
+                )
+            }
         </div>
     )
 }

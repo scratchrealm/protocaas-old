@@ -6,21 +6,20 @@ type Props = {
     width: number,
     height: number,
     fileName: string
-    onCreateJob?: () => void
     createJobEnabled?: boolean
     createJobTitle?: string
 }
 
-const JobsWindow: FunctionComponent<Props> = ({ width, height, fileName, onCreateJob, createJobEnabled, createJobTitle }) => {
+const JobsWindow: FunctionComponent<Props> = ({ width, height, fileName, createJobEnabled, createJobTitle }) => {
     const {jobs, openTab} = useProject()
 
     const filteredJobs = useMemo(() => {
         if (!jobs) return undefined
-        if (fileName.endsWith('.py')) {
-            return jobs.filter(jj => (jj.processorName === 'script' && jj.inputParameters.map(f => (f.value).includes(fileName))))
-        }
-        else if (fileName.endsWith('.nwb')) {
-            return jobs.filter(jj => (jj.inputFiles.map(x => (x.fileName)).includes(fileName)))
+        if (fileName) {
+            return jobs.filter(jj => (
+                jj.inputFiles.map(x => (x.fileName)).includes(fileName) ||
+                jj.outputFiles.map(x => (x.fileName)).includes(fileName)
+            ))
         }
         else return jobs
     }, [jobs, fileName])
@@ -34,7 +33,6 @@ const JobsWindow: FunctionComponent<Props> = ({ width, height, fileName, onCreat
             fileName={fileName}
             jobs={filteredJobs}
             onJobClicked={jobId => openTab(`job:${jobId}`)}
-            onCreateJob={onCreateJob}
             createJobEnabled={createJobEnabled}
             createJobTitle={createJobTitle}
         />

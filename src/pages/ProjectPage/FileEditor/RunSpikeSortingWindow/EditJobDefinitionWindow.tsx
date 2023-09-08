@@ -8,10 +8,11 @@ import { useElectricalSeriesPaths } from "../NwbFileEditor";
 
 type EditJobDefinitionWindowProps = {
     jobDefinition: ProtocaasProcessingJobDefinition | undefined
-    jobDefinitionDispatch: (action: ProtocaasProcessingJobDefinitionAction) => void
+    jobDefinitionDispatch?: (action: ProtocaasProcessingJobDefinitionAction) => void
     processor: ComputeResourceSpecProcessor
     nwbFile?: RemoteH5File
-    setValid: (valid: boolean) => void
+    setValid?: (valid: boolean) => void
+    readOnly?: boolean
 }
 
 type validParametersState = {
@@ -36,9 +37,9 @@ const validParametersReducer = (state: validParametersState, action: validParame
     else return state
 }
 
-const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> = ({jobDefinition, jobDefinitionDispatch, processor, nwbFile, setValid}) => {
+const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> = ({jobDefinition, jobDefinitionDispatch, processor, nwbFile, setValid, readOnly}) => {
     const setParameterValue = useCallback((name: string, value: any) => {
-        jobDefinitionDispatch({
+        jobDefinitionDispatch && jobDefinitionDispatch({
             type: 'setInputParameter',
             name,
             value
@@ -53,7 +54,7 @@ const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> =
         return true
     }, [validParameters])
     useEffect(() => {
-        setValid(allParametersAreValid)
+        setValid && setValid(allParametersAreValid)
     }, [allParametersAreValid, setValid])
 
     const rows = useMemo(() => {
@@ -95,11 +96,12 @@ const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> =
                             valid
                         })
                     }}
+                    readOnly={readOnly}
                 />
             )
         })
         return ret
-    }, [processor, jobDefinition, nwbFile, setParameterValue])
+    }, [processor, jobDefinition, nwbFile, setParameterValue, validParametersDispatch, readOnly])
     return (
         <div>
             <table className="table1">
@@ -149,21 +151,28 @@ type ParameterRowProps = {
     nwbFile?: RemoteH5File
     setValue: (value: any) => void
     setValid: (valid: boolean) => void
+    readOnly?: boolean
 }
 
-const ParameterRow: FunctionComponent<ParameterRowProps> = ({parameter, value, nwbFile, setValue, setValid}) => {
+const ParameterRow: FunctionComponent<ParameterRowProps> = ({parameter, value, nwbFile, setValue, setValid, readOnly}) => {
     const {type, name, help} = parameter
     return (
         <tr>
             <td title={`${name} (${type})`}>{name}</td>
             <td>
-                <EditParameterValue
-                    parameter={parameter}
-                    value={value}
-                    nwbFile={nwbFile}
-                    setValue={setValue}
-                    setValid={setValid}
-                />
+                {
+                    readOnly ? (
+                        <span>{value}</span>
+                    ) : (
+                        <EditParameterValue
+                            parameter={parameter}
+                            value={value}
+                            nwbFile={nwbFile}
+                            setValue={setValue}
+                            setValid={setValid}
+                        />
+                    )
+                }
             </td>
             <td>{help}</td>
         </tr>
@@ -193,7 +202,7 @@ const EditParameterValue: FunctionComponent<EditParameterValueProps> = ({paramet
         return <FloatEdit value={value} setValue={setValue} setValid={setValid} />
     }
     else if (type === 'bool') {
-        return <input type="checkbox" checked={value === 'true'} onChange={evt => {setValue(evt.target.checked ? 'true' : 'false')}} />
+        return <input type="checkbox" checked={value} onChange={evt => {setValue(evt.target.checked ? true : false)}} />
     }
     else if (type === 'Enum') {
         return <div>Enum not implemented yet</div>

@@ -22,14 +22,10 @@ const queryParams = new URLSearchParams(queryStringUrl)
 const ScriptFileEditor: FunctionComponent<Props> = ({fileName, fileContent, onSaveContent, editedFileContent, setEditedFileContent, readOnly, width, height}) => {
     const fileType = fileName.split('.').pop()
 
-    const {createJob, jobs, openTabs} = useProject()
+    const {jobs, openTabs} = useProject()
     const {workspaceRole} = useWorkspace()
 
     const [createJobTitle, setCreateJobTitle] = useState('Create job')
-
-    const handleCreateJob = useCallback(() => {
-        createJob({scriptFileName: fileName})
-    }, [createJob, fileName])
 
     const filteredJobs = useMemo(() => {
         if (!jobs) return undefined
@@ -102,7 +98,6 @@ const ScriptFileEditor: FunctionComponent<Props> = ({fileName, fileContent, onSa
                 width={0}
                 height={0}
                 fileName={fileName}
-                onCreateJob={handleCreateJob}
                 createJobEnabled={canCreateJob}
                 createJobTitle={createJobTitle}
             />

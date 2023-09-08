@@ -63,18 +63,19 @@ const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({f
     const handleSubmit = useCallback(async () => {
         if (!spikeSortingProcessorName) return
         if (!jobDefinition) return
+        if (!processor) return
         setSubmitting(true)
         try {
-            await createJob(workspaceId, projectId, jobDefinition, auth)
+            await createJob(workspaceId, projectId, jobDefinition, processor, auth)
             onClose()
         }
         finally {
             setSubmitting(false)
         }
-    }, [workspaceId, projectId, jobDefinition, auth, spikeSortingProcessorName, onClose])
+    }, [workspaceId, projectId, jobDefinition, auth, spikeSortingProcessorName, onClose, processor])
 
     const [valid, setValid] = useState<boolean>(false)
-    const submitEnabled = !submitting && valid
+    const submitEnabled = !submitting && valid && !!processor
 
     useEffect(() => {
         // do this so that we can identify in the dev console problems that would cause infinite recursion

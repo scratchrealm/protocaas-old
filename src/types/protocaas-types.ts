@@ -88,6 +88,7 @@ export type ProtocaasJob = {
     timestampRunning?: number
     timestampFinished?: number
     outputFileIds?: string[]
+    processorSpec: ComputeResourceSpecProcessor
 }
 
 export const isProtocaasJob = (x: any): x is ProtocaasJob => {
@@ -124,7 +125,8 @@ export const isProtocaasJob = (x: any): x is ProtocaasJob => {
         timestampQueued: optional(isNumber),
         timestampRunning: optional(isNumber),
         timestampFinished: optional(isNumber),
-        outputFileIds: optional(isArrayOf(isString))
+        outputFileIds: optional(isArrayOf(isString)),
+        processorSpec: isComputeResourceSpecProcessor
     })
 }
 
@@ -235,6 +237,35 @@ export type ComputeResourceSpecProcessor = {
     }[]
 }
 
+export const isComputeResourceSpecProcessor = (x: any): x is ComputeResourceSpecProcessor => {
+    return validateObject(x, {
+        name: isString,
+        help: isString,
+        inputs: isArrayOf(y => (validateObject(y, {
+            name: isString,
+            help: isString
+        }))),
+        outputs: isArrayOf(y => (validateObject(y, {
+            name: isString,
+            help: isString
+        }))),
+        parameters: isArrayOf(y => (validateObject(y, {
+            name: isString,
+            help: isString,
+            type: isString,
+            default: optional(() => true),
+            options: optional(isArrayOf(() => true))
+        }))),
+        attributes: isArrayOf(y => (validateObject(y, {
+            name: isString,
+            value: () => (true)
+        }))),
+        tags: isArrayOf(y => (validateObject(y, {
+            tag: isString
+        })))
+    })
+}
+
 export type ComputeResourceSpecApp = {
     name: string
     help: string
@@ -250,32 +281,7 @@ export const isComputeResourceSpec = (x: any): x is ComputeResourceSpec => {
         apps: isArrayOf(y => (validateObject(y, {
             name: isString,
             help: isString,
-            processors: isArrayOf(z => (validateObject(z, {
-                name: isString,
-                help: isString,
-                inputs: isArrayOf(a => (validateObject(a, {
-                    name: isString,
-                    help: isString
-                }))),
-                outputs: isArrayOf(a => (validateObject(a, {
-                    name: isString,
-                    help: isString
-                }))),
-                parameters: isArrayOf(a => (validateObject(a, {
-                    name: isString,
-                    help: isString,
-                    type: isString,
-                    default: optional(() => true),
-                    options: optional(isArrayOf(() => true))
-                }))),
-                attributes: isArrayOf(a => (validateObject(a, {
-                    name: isString,
-                    value: () => (true)
-                }))),
-                tags: isArrayOf(a => (validateObject(a, {
-                    tag: isString
-                })))
-            })))
+            processors: isArrayOf(isComputeResourceSpecProcessor)
         })))
     })
 }

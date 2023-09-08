@@ -1,5 +1,5 @@
 import { CreateProjectRequest, CreateJobRequest, CreateWorkspaceRequest, DeleteFileRequest, DeleteProjectRequest, DeleteComputeResourceRequest, DeleteJobRequest, DeleteWorkspaceRequest, GetProjectsRequest, GetFileRequest, GetFilesRequest, GetProjectRequest, GetComputeResourcesRequest, GetDataBlobRequest, GetJobRequest, GetJobsRequest, GetWorkspaceRequest, GetWorkspacesRequest, RegisterComputeResourceRequest, SetFileRequest, SetProjectPropertyRequest, SetWorkspacePropertyRequest, SetWorkspaceUsersRequest, DuplicateFileRequest, RenameFileRequest, GetComputeResourceRequest, SetComputeResourceAppsRequest } from "../types/ProtocaasRequest";
-import { ProtocaasProject, ProtocaasFile, ProtocaasComputeResource, ProtocaasJob, ProtocaasWorkspace } from "../types/protocaas-types";
+import { ProtocaasProject, ProtocaasFile, ProtocaasComputeResource, ProtocaasJob, ProtocaasWorkspace, ComputeResourceSpecProcessor } from "../types/protocaas-types";
 import postProtocaasRequest from "./postProtocaasRequest";
 
 export const fetchWorkspaces = async (auth: Auth): Promise<ProtocaasWorkspace[]> => {
@@ -486,6 +486,7 @@ export const createJob = async (
     workspaceId: string,
     projectId: string,
     jobDef: ProtocaasProcessingJobDefinition,
+    processorSpec: ComputeResourceSpecProcessor,
     auth: Auth)
 : Promise<string> => {
     const req: CreateJobRequest = {
@@ -496,7 +497,8 @@ export const createJob = async (
         processorName: jobDef.processorName,
         inputFiles: jobDef.inputFiles,
         inputParameters: jobDef.inputParameters,
-        outputFiles: jobDef.outputFiles
+        outputFiles: jobDef.outputFiles,
+        processorSpec
     }
     const resp = await postProtocaasRequest(req, {...auth})
     if (resp.type !== 'createJob') {

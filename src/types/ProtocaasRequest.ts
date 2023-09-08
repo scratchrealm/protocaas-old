@@ -1,4 +1,4 @@
-import { isProtocaasProject, isProtocaasFile, isProtocaasComputeResource, isProtocaasJob, isProtocaasWorkspace, ProtocaasProject, ProtocaasFile, ProtocaasComputeResource, ProtocaasJob, ProtocaasWorkspace, ComputeResourceSpec, isComputeResourceSpec } from "./protocaas-types"
+import { isProtocaasProject, isProtocaasFile, isProtocaasComputeResource, isProtocaasJob, isProtocaasWorkspace, ProtocaasProject, ProtocaasFile, ProtocaasComputeResource, ProtocaasJob, ProtocaasWorkspace, ComputeResourceSpec, isComputeResourceSpec, ComputeResourceSpecProcessor, isComputeResourceSpecProcessor } from "./protocaas-types"
 import validateObject, { isArrayOf, isBoolean, isEqualTo, isNumber, isOneOf, isString, optional } from "./validateObject"
 
 // getWorkspaces
@@ -709,6 +709,7 @@ export type CreateJobRequest = {
         name: string
         fileName: string
     }[]
+    processorSpec: ComputeResourceSpecProcessor
 }
 
 export const isCreateJobRequest = (x: any): x is CreateJobRequest => {
@@ -729,7 +730,8 @@ export const isCreateJobRequest = (x: any): x is CreateJobRequest => {
         outputFiles: isArrayOf(y => (validateObject(y, {
             name: isString,
             fileName: isString
-        })))
+        }))),
+        processorSpec: isComputeResourceSpecProcessor
     })
 }
 

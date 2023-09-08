@@ -17,7 +17,6 @@ type Props = {
     fileName: string
     jobs: ProtocaasJob[] | undefined
     onJobClicked: (jobId: string) => void
-    onCreateJob?: () => void
     createJobEnabled?: boolean
     createJobTitle?: string
 }
@@ -26,7 +25,7 @@ const menuBarHeight = 30
 const hPadding = 20
 const vPadding = 5
 
-const JobsTable: FunctionComponent<Props> = ({ width, height, fileName, jobs, onJobClicked, onCreateJob, createJobEnabled, createJobTitle }) => {
+const JobsTable: FunctionComponent<Props> = ({ width, height, fileName, jobs, onJobClicked, createJobEnabled, createJobTitle }) => {
     const sortedJobs = useMemo(() => {
         if (!jobs) return []
         return [...jobs].sort((a, b) => (b.timestampCreated - a.timestampCreated))
@@ -44,7 +43,6 @@ const JobsTable: FunctionComponent<Props> = ({ width, height, fileName, jobs, on
                     height={menuBarHeight - vPadding * 2}
                     selectedJobIds={Array.from(selectedJobIds)}
                     onResetSelection={() => selectedJobIdsDispatch({type: 'set', values: new Set<string>()})}
-                    onCreateJob={onCreateJob}
                     createJobEnabled={createJobEnabled}
                     createJobTitle={createJobTitle}
                 />
@@ -56,43 +54,56 @@ const JobsTable: FunctionComponent<Props> = ({ width, height, fileName, jobs, on
                             <th style={{width: colWidth}} />
                             <th style={{width: colWidth}} />
                             <th>Job</th>
+                            <th>Processor</th>
                             <th>Status</th>
                             <th>User</th>
                             <th>Created</th>
                             <th>Compute</th>
+                            <th>Role</th>
                         </tr>
                     </thead>
                     <tbody>
                         {
-                            sortedJobs.map((jj) => (
-                                <tr key={jj.jobId}>
-                                    <td style={{width: colWidth}}>
-                                        <TableCheckbox checked={selectedJobIds.has(jj.jobId)} onClick={() => selectedJobIdsDispatch({type: 'toggle', value: jj.jobId})} />
-                                    </td>
-                                    <td style={{width: colWidth}}>
-                                        <JobIcon job={jj} />
-                                    </td>
-                                    <td>
-                                        <Hyperlink onClick={() => onJobClicked(jj.jobId)}>
-                                            {jj.jobId}
-                                        </Hyperlink>
-                                    </td>
-                                    <td>{
-                                        jj.status !== 'failed' ? (
-                                            <span>{jj.status}</span>
-                                        ) : (
+                            sortedJobs.map((jj) => {
+                                let role = ''
+                                if (jj.inputFiles.map(f => f.fileName).includes(fileName)) {
+                                    role = 'input'
+                                }
+                                else if (jj.outputFiles.map(f => f.fileName).includes(fileName)) {
+                                    role = 'output'
+                                }
+                                return (
+                                    <tr key={jj.jobId}>
+                                        <td style={{width: colWidth}}>
+                                            <TableCheckbox checked={selectedJobIds.has(jj.jobId)} onClick={() => selectedJobIdsDispatch({type: 'toggle', value: jj.jobId})} />
+                                        </td>
+                                        <td style={{width: colWidth}}>
+                                            <JobIcon job={jj} />
+                                        </td>
+                                        <td>
                                             <Hyperlink onClick={() => onJobClicked(jj.jobId)}>
-                                                <span style={{color: 'red'}}>{jj.status}: {jj.error}</span>
+                                                {jj.jobId}
                                             </Hyperlink>
-                                        )
-                                    }</td>
-                                    <td>
-                                        <UserIdComponent userId={jj.userId} />
-                                    </td>
-                                    <td>{timeAgoString(jj.timestampCreated)}</td>
-                                    <td><ComputeResourceIdComponent computeResourceId={jj.computeResourceId} link={true} /></td>
-                                </tr>
-                            ))
+                                        </td>
+                                        <td>{jj.processorName}</td>
+                                        <td>{
+                                            jj.status !== 'failed' ? (
+                                                <span>{jj.status}</span>
+                                            ) : (
+                                                <Hyperlink onClick={() => onJobClicked(jj.jobId)}>
+                                                    <span style={{color: 'red'}}>{jj.status}: {jj.error}</span>
+                                                </Hyperlink>
+                                            )
+                                        }</td>
+                                        <td>
+                                            <UserIdComponent userId={jj.userId} />
+                                        </td>
+                                        <td>{timeAgoString(jj.timestampCreated)}</td>
+                                        <td><ComputeResourceIdComponent computeResourceId={jj.computeResourceId} link={true} /></td>
+                                        <td>{role}</td>
+                                    </tr>
+                                )
+                            })
                         }
                     </tbody>
                 </table>

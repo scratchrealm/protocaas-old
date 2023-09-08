@@ -233,32 +233,6 @@ export const SetupProjectPage: FunctionComponent<PropsWithChildren<Props>> = ({c
         return () => {cancel()}
     }, [projectId, refreshJobs])
 
-    const createJobHandler = useCallback(async (o: {scriptFileName: string}) => {
-        if (!project) return
-        const t = openTabs.openTabs.find(x => x.tabName === `file:${o.scriptFileName}`)
-        if (!t) {
-            console.warn(`Could not find tab for script file ${o.scriptFileName}. Not creating job.`)
-            return
-        }
-        if (t.content !== t.editedContent) {
-            console.warn(`Script file ${o.scriptFileName} has been edited but not saved. Not creating job.`)
-            return
-        }
-        const oo = {
-            processorName: 'script',
-            inputFiles: [],
-            inputParameters: [
-                {
-                    name: 'script_file',
-                    value: o.scriptFileName
-                }
-            ],
-            outputFiles: []
-        }
-        await createJob(project.workspaceId, projectId, oo, auth)
-        refreshJobs()
-    }, [project, projectId, refreshJobs, auth, openTabs])
-
     const deleteJobHandler = useCallback(async (jobId: string) => {
         if (!project) return
         await deleteJob(project.workspaceId, projectId, jobId, auth)
@@ -316,13 +290,12 @@ export const SetupProjectPage: FunctionComponent<PropsWithChildren<Props>> = ({c
         deleteProject: deleteProjectHandler,
         setProjectProperty: setProjectPropertyHandler,
         refreshJobs,
-        createJob: createJobHandler,
         deleteJob: deleteJobHandler,
         deleteFile: deleteFileHandler,
         duplicateFile: duplicateFileHandler,
         renameFile: renameFileHandler,
         fileHasBeenEdited
-    }), [project, files, projectId, refreshFiles, openTabs, deleteProjectHandler, setProjectPropertyHandler, refreshJobs, jobs, createJobHandler, deleteJobHandler, deleteFileHandler, duplicateFileHandler, renameFileHandler, fileHasBeenEdited])
+    }), [project, files, projectId, refreshFiles, openTabs, deleteProjectHandler, setProjectPropertyHandler, refreshJobs, jobs, deleteJobHandler, deleteFileHandler, duplicateFileHandler, renameFileHandler, fileHasBeenEdited])
 
     return (
         <ProjectPageContext.Provider value={value}>

@@ -92,7 +92,8 @@ const createJobHandler = async (request: CreateJobRequest, o: {verifiedClientId?
         outputFiles,
         timestampCreated: Date.now() / 1000,
         computeResourceId,
-        status: 'pending'
+        status: 'pending',
+        processorSpec: request.processorSpec
     }
     const jobsCollection = client.db('protocaas').collection('jobs')
     await jobsCollection.insertOne(job)
