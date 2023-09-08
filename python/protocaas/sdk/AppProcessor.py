@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Union
 from dataclasses import dataclass
 
 
@@ -45,6 +45,7 @@ class AppProcessorParameter:
     help: str
     type: Any
     default: Any
+    options: Union[List[str], List[int], List[float], None]
     def get_spec(self):
         ret = {
             'name': self.name,
@@ -53,15 +54,19 @@ class AppProcessorParameter:
         }
         if self.default != _NO_DEFAULT:
             ret['default'] = self.default
+        if self.options is not None:
+            ret['options'] = self.options
         return ret
     @staticmethod
     def from_spec(spec):
         default = spec.get('default', _NO_DEFAULT)
+        options = spec.get('options', None)
         return AppProcessorParameter(
             name=spec['name'],
             help=spec['help'],
             type=_type_from_string(spec['type']),
-            default=default
+            default=default,
+            options=options
         )
 
 @dataclass
@@ -155,7 +160,7 @@ class AppProcessor:
         tags = getattr(processor_func, 'protocaas_tags', [])
         _inputs = [AppProcessorInput(name=i['name'], help=i['help']) for i in inputs]
         _outputs = [AppProcessorOutput(name=o['name'], help=o['help']) for o in outputs]
-        _parameters = [AppProcessorParameter(name=p['name'], help=p['help'], type=p['type'], default=p['default']) for p in parameters]
+        _parameters = [AppProcessorParameter(name=p['name'], help=p['help'], type=p['type'], default=p['default'], options=p.get('options', None)) for p in parameters]
         _attributes = [AppProcessorAttribute(name=a['name'], value=a['value']) for a in attributes]
         _tags = [AppProcessorTag(tag=t) for t in tags]
         return AppProcessor(

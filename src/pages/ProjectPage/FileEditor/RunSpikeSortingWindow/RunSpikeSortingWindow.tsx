@@ -1,5 +1,5 @@
-import { FunctionComponent, useCallback, useEffect, useMemo, useState } from "react"
-import { createJob, ProtocaasProcessingJobDefinition } from "../../../../dbInterface/dbInterface"
+import { FunctionComponent, useCallback, useEffect, useMemo, useReducer, useState } from "react"
+import { createJob, defaultJobDefinition, protocaasJobDefinitionReducer, ProtocaasProcessingJobDefinition } from "../../../../dbInterface/dbInterface"
 import { useGithubAuth } from "../../../../GithubAuth/useGithubAuth"
 import { RemoteH5File } from "../../../../RemoteH5File/RemoteH5File"
 import { useWorkspace } from "../../../WorkspacePage/WorkspacePageContext"
@@ -32,7 +32,7 @@ const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({f
     const {accessToken, userId} = useGithubAuth()
     const auth = useMemo(() => (accessToken ? {githubAccessToken: accessToken, userId} : {}), [accessToken, userId])
 
-    const [jobDefinition, setJobDefinition] = useState<ProtocaasProcessingJobDefinition | undefined>(undefined)
+    const [jobDefinition, jobDefinitionDispatch] = useReducer(protocaasJobDefinitionReducer, defaultJobDefinition)
     useEffect(() => {
         if (!processor) return
         const jd: ProtocaasProcessingJobDefinition = {
@@ -45,7 +45,7 @@ const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({f
             outputFiles: [
                 {
                     name: 'output',
-                    fileName: `.${processor.name}/${fileName}`
+                    fileName: `.job-outputs/${processor.name}/$\{job-id}/output.nwb`
                 }
             ],
             inputParameters: processor.parameters.map(p => ({
@@ -54,7 +54,10 @@ const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({f
             })),
             processorName: processor.name
         }
-        setJobDefinition(jd)
+        jobDefinitionDispatch({
+            type: 'setJobDefinition',
+            jobDefinition: jd
+        })
     }, [processor, fileName])
 
     const handleSubmit = useCallback(async () => {
@@ -70,9 +73,11 @@ const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({f
         }
     }, [workspaceId, projectId, jobDefinition, auth, spikeSortingProcessorName, onClose])
 
-    const submitEnabled = !submitting
+    const [valid, setValid] = useState<boolean>(false)
+    const submitEnabled = !submitting && valid
 
     useEffect(() => {
+        // do this so that we can identify in the dev console problems that would cause infinite recursion
         console.info('Job definition:', jobDefinition)
     }, [jobDefinition])
 
@@ -90,9 +95,10 @@ const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({f
             {
                 processor && <EditJobDefinitionWindow
                     jobDefinition={jobDefinition}
-                    setJobDefinition={setJobDefinition}
+                    jobDefinitionDispatch={jobDefinitionDispatch}
                     processor={processor}
                     nwbFile={nwbFile}
+                    setValid={setValid}
                 />
             }
             <hr />

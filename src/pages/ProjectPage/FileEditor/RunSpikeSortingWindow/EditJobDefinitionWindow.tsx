@@ -1,33 +1,61 @@
-import { FunctionComponent, useCallback, useEffect, useMemo, useState } from "react";
-import { ProtocaasProcessingJobDefinition } from "../../../../dbInterface/dbInterface";
+import { FunctionComponent, useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import { ProtocaasProcessingJobDefinition, ProtocaasProcessingJobDefinitionAction } from "../../../../dbInterface/dbInterface";
 import { RemoteH5File } from "../../../../RemoteH5File/RemoteH5File";
 import { ComputeResourceSpecProcessor, ComputeResourceSpecProcessorParameter } from "../../../../types/protocaas-types";
 import { useElectricalSeriesPaths } from "../NwbFileEditor";
 
+
+
 type EditJobDefinitionWindowProps = {
     jobDefinition: ProtocaasProcessingJobDefinition | undefined
-    setJobDefinition: (jobDefinition: ProtocaasProcessingJobDefinition | undefined) => void
+    jobDefinitionDispatch: (action: ProtocaasProcessingJobDefinitionAction) => void
     processor: ComputeResourceSpecProcessor
     nwbFile?: RemoteH5File
+    setValid: (valid: boolean) => void
 }
 
-const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> = ({jobDefinition, setJobDefinition, processor, nwbFile}) => {
-    const setParameterValue = useCallback((name: string, value: any) => {
-        if (!jobDefinition) return
-        const newJobDefinition: ProtocaasProcessingJobDefinition = {
-            ...jobDefinition,
-            inputParameters: jobDefinition.inputParameters.map(p => {
-                if (p.name === name) {
-                    return {
-                        ...p,
-                        value
-                    }
-                }
-                else return p
-            })
+type validParametersState = {
+    [key: string]: boolean
+}
+
+type validParametersAction = {
+    type: 'setValid'
+    name: string
+    valid: boolean
+}
+
+const validParametersReducer = (state: validParametersState, action: validParametersAction) => {
+    if (action.type === 'setValid') {
+        // check if no change
+        if (state[action.name] === action.valid) return state
+        return {
+            ...state,
+            [action.name]: action.valid
         }
-        setJobDefinition(newJobDefinition)
-    }, [jobDefinition, setJobDefinition])
+    }
+    else return state
+}
+
+const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> = ({jobDefinition, jobDefinitionDispatch, processor, nwbFile, setValid}) => {
+    const setParameterValue = useCallback((name: string, value: any) => {
+        jobDefinitionDispatch({
+            type: 'setInputParameter',
+            name,
+            value
+        })
+    }, [jobDefinitionDispatch])
+
+    const [validParameters, validParametersDispatch] = useReducer(validParametersReducer, {})
+    const allParametersAreValid = useMemo(() => {
+        for (const name in validParameters) {
+            if (!validParameters[name]) return false
+        }
+        return true
+    }, [validParameters])
+    useEffect(() => {
+        setValid(allParametersAreValid)
+    }, [allParametersAreValid, setValid])
+
     const rows = useMemo(() => {
         const ret: any[] = []
         processor.inputs.forEach(input => {
@@ -59,6 +87,13 @@ const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> =
                     nwbFile={nwbFile}
                     setValue={value => {
                         setParameterValue(parameter.name, value)
+                    }}
+                    setValid={valid => {
+                        validParametersDispatch({
+                            type: 'setValid',
+                            name: parameter.name,
+                            valid
+                        })
                     }}
                 />
             )
@@ -113,9 +148,10 @@ type ParameterRowProps = {
     value: any
     nwbFile?: RemoteH5File
     setValue: (value: any) => void
+    setValid: (valid: boolean) => void
 }
 
-const ParameterRow: FunctionComponent<ParameterRowProps> = ({parameter, value, nwbFile, setValue}) => {
+const ParameterRow: FunctionComponent<ParameterRowProps> = ({parameter, value, nwbFile, setValue, setValid}) => {
     const {type, name, help} = parameter
     return (
         <tr>
@@ -126,6 +162,7 @@ const ParameterRow: FunctionComponent<ParameterRowProps> = ({parameter, value, n
                     value={value}
                     nwbFile={nwbFile}
                     setValue={setValue}
+                    setValid={setValid}
                 />
             </td>
             <td>{help}</td>
@@ -138,9 +175,10 @@ type EditParameterValueProps = {
     value: any
     nwbFile?: RemoteH5File
     setValue: (value: any) => void
+    setValid: (valid: boolean) => void
 }
 
-const EditParameterValue: FunctionComponent<EditParameterValueProps> = ({parameter, value, nwbFile, setValue}) => {
+const EditParameterValue: FunctionComponent<EditParameterValueProps> = ({parameter, value, nwbFile, setValue, setValid}) => {
     const {type, name} = parameter
     if (name === 'electrical_series_path') {
         return <ElectricalSeriesPathSelector value={value} nwbFile={nwbFile} setValue={setValue} />
@@ -149,10 +187,10 @@ const EditParameterValue: FunctionComponent<EditParameterValueProps> = ({paramet
         return <input type="text" value={value} onChange={evt => {setValue(evt.target.value)}} />
     }
     else if (type === 'int') {
-        return <IntEdit value={value} setValue={setValue} />
+        return <IntEdit value={value} setValue={setValue} setValid={setValid} />
     }
     else if (type === 'float') {
-        return <FloatEdit value={value} setValue={setValue} />
+        return <FloatEdit value={value} setValue={setValue} setValid={setValid} />
     }
     else if (type === 'bool') {
         return <input type="checkbox" checked={value === 'true'} onChange={evt => {setValue(evt.target.checked ? 'true' : 'false')}} />
@@ -175,70 +213,108 @@ const EditParameterValue: FunctionComponent<EditParameterValueProps> = ({paramet
     }
 }
 
-type IntEditProps = {
-    value: any
-    setValue: (value: number) => void
-}
-
-const IntEdit: FunctionComponent<IntEditProps> = ({value, setValue}) => {
-    const [internalValue, setInternalValue] = useState<string>(value)
-    useEffect(() => {
-        if (isIntType(value)) {
-            setInternalValue(old => {
-                if (parseInt(old) === value) return old
-                return `${value}`
-            })
-        }
-    }, [value])
-
-    useEffect(() => {
-        if (stringIsInt(internalValue)) {
-            setValue(parseInt(internalValue))
-        }
-    }, [internalValue, setValue])
-
-    return <input type="text" value={internalValue} onChange={evt => {setInternalValue(evt.target.value)}} />
-}
-
-const isIntType = (x: any) => {
-    return (typeof(x) === 'number') && (Math.floor(x) === x)
-}
-
-const stringIsInt = (x: string) => {
-    return isIntType(parseInt(x))
-}
-
 type FloatEditProps = {
     value: any
     setValue: (value: number) => void
+    setValid: (valid: boolean) => void
 }
 
-const FloatEdit: FunctionComponent<FloatEditProps> = ({value, setValue}) => {
-    const [internalValue, setInternalValue] = useState<string>(value)
+const FloatEdit: FunctionComponent<FloatEditProps> = ({value, setValue, setValid}) => {
+    const [internalValue, setInternalValue] = useState<string | undefined>(undefined)
     useEffect(() => {
         if (isFloatType(value)) {
             setInternalValue(old => {
-                if (parseFloat(old) === value) return old
+                if ((old !== undefined) && (stringIsValidFloat(old)) && (parseFloat(old) === value)) return old
                 return `${value}`
             })
         }
     }, [value])
 
     useEffect(() => {
-        if (stringIsFloat(internalValue)) {
+        if (internalValue === undefined) return
+        if (stringIsValidFloat(internalValue)) {
             setValue(parseFloat(internalValue))
+            setValid(true)
         }
-    }, [internalValue, setValue])
+        else {
+            setValid(false)
+        }
+    }, [internalValue, setValue, setValid])
 
-    return <input type="text" value={internalValue} onChange={evt => {setInternalValue(evt.target.value)}} />
+    const isValid = useMemo(() => {
+        if (internalValue === undefined) return false
+        return stringIsValidFloat(internalValue)
+    }, [internalValue])
+
+    return (
+        <span>
+            <input type="text" value={internalValue || ''} onChange={evt => {setInternalValue(evt.target.value)}} />
+            {
+                isValid ? null : <span style={{color: 'red'}}>x</span>
+            }
+        </span>
+    )
 }
 
 const isFloatType = (x: any) => {
     return (typeof(x) === 'number') && (!isNaN(x))
 }
 
-const stringIsFloat = (x: string) => {
-    return isFloatType(parseFloat(x))
+function stringIsValidFloat(s: string) {
+    const floatRegex = /^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/;
+    return floatRegex.test(s);
+}
+
+type IntEditProps = {
+    value: any
+    setValue: (value: number) => void
+    setValid: (valid: boolean) => void
+}
+
+const IntEdit: FunctionComponent<IntEditProps> = ({value, setValue, setValid}) => {
+    const [internalValue, setInternalValue] = useState<string | undefined>(undefined)
+    useEffect(() => {
+        if (isIntType(value)) {
+            setInternalValue(old => {
+                if ((old !== undefined) && (stringIsValidInt(old)) && (parseInt(old) === value)) return old
+                return `${value}`
+            })
+        }
+    }, [value])
+
+    useEffect(() => {
+        if (internalValue === undefined) return
+        if (stringIsValidInt(internalValue)) {
+            setValue(parseInt(internalValue))
+            setValid(true)
+        }
+        else {
+            setValid(false)
+        }
+    }, [internalValue, setValue, setValid])
+
+    const isValid = useMemo(() => {
+        if (internalValue === undefined) return false
+        return stringIsValidInt(internalValue)
+    }, [internalValue])
+
+    return (
+        <span>
+            <input type="text" value={internalValue || ''} onChange={evt => {setInternalValue(evt.target.value)}} />
+            {
+                isValid ? null : <span style={{color: 'red'}}>x</span>
+            }
+        </span>
+    )
+}
+
+const isIntType = (x: any) => {
+    return (typeof(x) === 'number') && (!isNaN(x)) && (Math.floor(x) === x)
+}
+
+function stringIsValidInt(s: string) {
+    const intRegex = /^[-+]?[0-9]+$/;
+    return intRegex.test(s);
 }
 
 type ElectricalSeriesPathSelectorProps = {

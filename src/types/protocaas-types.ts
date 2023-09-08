@@ -211,6 +211,7 @@ export type ComputeResourceSpecProcessorParameter = {
     help: string
     type: string
     default?: any
+    options?: string[] | number[]
 }
 
 export type ComputeResourceSpecProcessor = {
@@ -264,7 +265,8 @@ export const isComputeResourceSpec = (x: any): x is ComputeResourceSpec => {
                     name: isString,
                     help: isString,
                     type: isString,
-                    default: optional(() => true)
+                    default: optional(() => true),
+                    options: optional(isArrayOf(() => true))
                 }))),
                 attributes: isArrayOf(a => (validateObject(a, {
                     name: isString,

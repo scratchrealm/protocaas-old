@@ -409,6 +409,79 @@ export type ProtocaasProcessingJobDefinition = {
     }[]
 }
 
+export type ProtocaasProcessingJobDefinitionAction = {
+    type: 'setInputFile'
+    name: string
+    fileName: string
+} | {
+    type: 'setInputParameter'
+    name: string
+    value: any
+} | {
+    type: 'setOutputFile'
+    name: string
+    fileName: string
+} | {
+    type: 'setProcessorName'
+    processorName: string
+} | {
+    type: 'setJobDefinition'
+    jobDefinition: ProtocaasProcessingJobDefinition
+}
+
+export const defaultJobDefinition: ProtocaasProcessingJobDefinition = {
+    processorName: '',
+    inputFiles: [],
+    inputParameters: [],
+    outputFiles: []
+}
+
+export const protocaasJobDefinitionReducer = (state: ProtocaasProcessingJobDefinition, action: ProtocaasProcessingJobDefinitionAction): ProtocaasProcessingJobDefinition => {
+
+    switch (action.type) {
+        case 'setInputFile':
+            // check if no change
+            if (state.inputFiles.find(f => f.name === action.name && f.fileName === action.fileName)) {
+                return state
+            }
+            return {
+                ...state,
+                inputFiles: state.inputFiles.map(f => f.name === action.name ? {...f, fileName: action.fileName} : f)
+            }
+        case 'setInputParameter':
+            // check if no change
+            if (state.inputParameters.find(p => p.name === action.name && deepEqual(p.value, action.value))) {
+                return state
+            }
+            return {
+                ...state,
+                inputParameters: state.inputParameters.map(p => p.name === action.name ? {...p, value: action.value} : p)
+            }
+        case 'setOutputFile':
+            // check if no change
+            if (state.outputFiles.find(f => f.name === action.name && f.fileName === action.fileName)) {
+                return state
+            }
+            return {
+                ...state,
+                outputFiles: state.outputFiles.map(f => f.name === action.name ? {...f, fileName: action.fileName} : f)
+            }
+        case 'setProcessorName':
+            // check if no change
+            if (state.processorName === action.processorName) {
+                return state
+            }
+            return {
+                ...state,
+                processorName: action.processorName
+            }
+        case 'setJobDefinition':
+            return action.jobDefinition
+        default:
+            throw Error(`Unexpected action type ${(action as any).type}`)
+    }
+}
+
 export const createJob = async (
     workspaceId: string,
     projectId: string,
@@ -496,4 +569,42 @@ export const getComputeResource = async (computeResourceId: string): Promise<any
         throw Error(`Unexpected response type ${resp.type}. Expected getComputeResource.`)
     }
     return resp.computeResource
+}
+
+const deepEqual = (a: any, b: any): boolean => {
+    if (typeof a !== typeof b) {
+        return false
+    }
+    if (typeof a === 'object') {
+        if (Array.isArray(a)) {
+            if (!Array.isArray(b)) {
+                return false
+            }
+            if (a.length !== b.length) {
+                return false
+            }
+            for (let i = 0; i < a.length; i++) {
+                if (!deepEqual(a[i], b[i])) {
+                    return false
+                }
+            }
+            return true
+        }
+        else {
+            const aKeys = Object.keys(a)
+            const bKeys = Object.keys(b)
+            if (aKeys.length !== bKeys.length) {
+                return false
+            }
+            for (const key of aKeys) {
+                if (!deepEqual(a[key], b[key])) {
+                    return false
+                }
+            }
+            return true
+        }
+    }
+    else {
+        return a === b
+    }
 }

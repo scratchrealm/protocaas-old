@@ -18,7 +18,7 @@ export const putObject = async (bucket: Bucket, params: PutObjectRequest): Promi
         request.on('error', (err: Error) => {
             reject(new Error(`Error uploading to bucket: ${err.message}`)) 
         })
-        request.on('httpHeaders', (statusCode, headers, response, statusMessage) => {
+        request.on('httpHeaders', (statusCode: any, headers: any, response: any, statusMessage: any) => {
             if (statusCode !== 200) {
                 reject(`Error uploading to bucket * (${statusCode}): ${statusMessage}`)
                 return
@@ -169,7 +169,7 @@ export const parseBucketUri = (uri: string) => {
     const aa = uri.slice(0, ind)
     const qq = uri.slice(ind + 1)
     const query: {[key: string]: string} = {}
-    for (let part of qq.split('&')) {
+    for (const part of qq.split('&')) {
         const kk = part.split('=')[0] || ''
         const vv = part.split('=')[1] || ''
         if ((kk) && (vv)) {

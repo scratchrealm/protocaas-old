@@ -51,11 +51,14 @@ def output(name, help=None):
     return decorator
 
 # This decorator is used to add a parameter to a processor
-def parameter(name, *, help: str, type, default=_NO_DEFAULT):
+def parameter(name, *, help: str, type, default=_NO_DEFAULT, options: list=None):
     def decorator(func):
         if not hasattr(func, 'protocaas_parameters'):
             setattr(func, 'protocaas_parameters', [])
         parameters: list = getattr(func, 'protocaas_parameters')
-        parameters.insert(0, {'name': name, 'help': help, 'type': type, 'default': default})
+        pp = {'name': name, 'help': help, 'type': type, 'default': default}
+        if options is not None:
+            pp['options'] = options
+        parameters.insert(0, pp)
         return func
     return decorator

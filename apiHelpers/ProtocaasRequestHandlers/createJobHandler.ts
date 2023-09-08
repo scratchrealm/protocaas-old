@@ -69,6 +69,16 @@ const createJobHandler = async (request: CreateJobRequest, o: {verifiedClientId?
     const jobId = createRandomId(8)
     const jobPrivateKey = createRandomId(32)
 
+    const filterOutputFileName = (fileName: string) => {
+        // replace ${job-id} with the actual job ID
+        return fileName.replace(/\$\{job-id\}/g, jobId)
+    }
+
+    const outputFiles = request.outputFiles.map(x => ({
+        ...x,
+        fileName: filterOutputFileName(x.fileName),
+    }))
+
     const job: ProtocaasJob = {
         jobId,
         jobPrivateKey,
@@ -79,7 +89,7 @@ const createJobHandler = async (request: CreateJobRequest, o: {verifiedClientId?
         inputFiles,
         inputFileIds: inputFiles.map(x => x.fileId),
         inputParameters: request.inputParameters,
-        outputFiles: request.outputFiles,
+        outputFiles,
         timestampCreated: Date.now() / 1000,
         computeResourceId,
         status: 'pending'

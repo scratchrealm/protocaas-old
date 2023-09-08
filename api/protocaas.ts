@@ -9,7 +9,7 @@ import { isComputeResourceGetAppsRequest, isComputeResourceGetPendingJobsRequest
 import processorGetJobHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorGetJobHandler'
 import processorSetJobConsoleOutputHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorSetJobConsoleOutputHandler'
 import processorSetJobStatusHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorSetJobStatusHandler'
-import { isProcessorGetJobRequest, isProcessorSetJobConsoleOutputRequest, isProcessorSetJobStatusRequest, isProtocaasProcessorRequest, ProtocaasProcessorRequest, ProtocaasProcessorResponse } from '../apiHelpers/ProtocaasProcessorRequestHandlers/ProtocaasProcessorRequest'
+import { isProcessorGetJobRequest, isProcessorGetOutputUploadUrlRequest, isProcessorSetJobConsoleOutputRequest, isProcessorSetJobStatusRequest, isProtocaasProcessorRequest, ProtocaasProcessorRequest, ProtocaasProcessorResponse } from '../apiHelpers/ProtocaasProcessorRequestHandlers/ProtocaasProcessorRequest'
 import createJobHandler from '../apiHelpers/ProtocaasRequestHandlers/createJobHandler'
 import createProjectHandler from '../apiHelpers/ProtocaasRequestHandlers/createProjectHandler'
 import createWorkspaceHandler from '../apiHelpers/ProtocaasRequestHandlers/createWorkspaceHandler'
@@ -42,6 +42,7 @@ import setWorkspacePropertyHandler from '../apiHelpers/ProtocaasRequestHandlers/
 import setWorkspaceUsersHandler from '../apiHelpers/ProtocaasRequestHandlers/setWorkspaceUsersHandler'
 import verifySignature from '../apiHelpers/verifySignature'
 import { isCreateJobRequest, isCreateProjectRequest, isCreateWorkspaceRequest, isDeleteComputeResourceRequest, isDeleteFileRequest, isDeleteJobRequest, isDeleteProjectRequest, isDeleteWorkspaceRequest, isDuplicateFileRequest, isGetActiveComputeResourceNodesRequest, isGetComputeResourceRequest, isGetComputeResourcesRequest, isGetDataBlobRequest, isGetFileRequest, isGetFilesRequest, isGetJobRequest, isGetJobsRequest, isGetProjectRequest, isGetProjectsRequest, isGetPubsubSubscriptionRequest, isGetWorkspaceRequest, isGetWorkspacesRequest, isProtocaasRequest, isRegisterComputeResourceRequest, isRenameFileRequest, isSetComputeResourceAppsRequest, isSetFileRequest, isSetJobPropertyRequest, isSetProjectPropertyRequest, isSetWorkspacePropertyRequest, isSetWorkspaceUsersRequest } from '../src/types/ProtocaasRequest'
+import processorGetOutputUploadUrlHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorGetOutputUploadUrlHandler'
 
 const ADMIN_USER_IDS = JSON.parse(process.env.ADMIN_USER_IDS || '[]') as string[]
 
@@ -232,6 +233,9 @@ const handleProcessorRequest = async (request: ProtocaasProcessorRequest): Promi
     }
     else if (isProcessorSetJobConsoleOutputRequest(request)) {
         return await processorSetJobConsoleOutputHandler(request)
+    }
+    else if (isProcessorGetOutputUploadUrlRequest(request)) {
+        return await processorGetOutputUploadUrlHandler(request)
     }
     else {
         throw Error(`Unexpected processor request type: ${(request as any).type}`)
