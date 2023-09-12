@@ -21,7 +21,6 @@ def _run_job(*, job_id: str, job_private_key: str, app_executable: str):
     env['JOB_PRIVATE_KEY'] = job_private_key
     env['JOB_INTERNAL'] = '1'
     print(f'Running {app_executable} (Job ID: {job_id})) (Job private key: {job_private_key})')
-    print('--- env', env)
     proc = subprocess.Popen(
         cmd,
         env=env,

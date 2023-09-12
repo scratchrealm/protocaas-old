@@ -61,7 +61,7 @@ class App:
                 # In this mode we run the job, including interacting with the protocaas API
                 if APP_EXECUTABLE is None:
                     raise Exception('APP_EXECUTABLE is not set')
-                _run_job(
+                return _run_job(
                     job_id=JOB_ID,
                     job_private_key=JOB_PRIVATE_KEY,
                     app_executable=APP_EXECUTABLE
