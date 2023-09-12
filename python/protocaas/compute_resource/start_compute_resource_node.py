@@ -100,7 +100,12 @@ class Daemon:
             app = self._find_app_with_processor(processor_name)
             if app is not None:
                 print(f'Starting job {job_id} {processor_name}')
-                running_job = RunningJob(job_id=job_id, job_private_key=job_private_key, app=app, processor_name=processor_name)
+                running_job = RunningJob(
+                    job_id=job_id,
+                    job_private_key=job_private_key,
+                    app=app,
+                    processor_name=processor_name
+                )
                 running_job.start()
                 self._running_jobs.append(running_job)
             else:
@@ -134,8 +139,26 @@ def _load_apps(*, compute_resource_id: str, compute_resource_private_key: str):
     resp = _post_api_request(req)
     ret = []
     for a in resp['apps']:
-        print(f'Loading app {a["executablePath"]}')
-        app = App.from_executable(a['executablePath'])
+        container = a.get('container', None)
+        aws_batch = a.get('awsBatch', None)
+        s = []
+        if container is not None:
+            s.append(f'container: {container}')
+        if aws_batch is not None:
+            aws_batch_job_queue = aws_batch.get('jobQueue', None)
+            aws_batch_job_definition = aws_batch.get('jobDefinition', None)
+            s.append(f'awsBatchJobQueue: {aws_batch_job_queue}')
+            s.append(f'awsBatchJobDefinition: {aws_batch_job_definition}')
+        else:
+            aws_batch_job_queue = None
+            aws_batch_job_definition = None
+        print(f'Loading app {a["executablePath"]} | {" | ".join(s)}')
+        app = App.from_executable(
+            a['executablePath'],
+            container=container,
+            aws_batch_job_queue=aws_batch_job_queue,
+            aws_batch_job_definition=aws_batch_job_definition
+        )
         print(f'  {len(app._processors)} processors')
         ret.append(app)
     return ret

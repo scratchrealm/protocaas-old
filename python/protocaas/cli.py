@@ -8,8 +8,8 @@ def main():
     pass
 
 @click.command(help='Initialize a compute resource node in the current directory')
-@click.option('--compute-resource-id', default='', help='Compute resource ID')
-@click.option('--compute-resource-private-key', default='', help='Compute resource private key')
+@click.option('--compute-resource-id', default=None, help='Compute resource ID')
+@click.option('--compute-resource-private-key', default=None, help='Compute resource private key')
 def init_compute_resource_node(compute_resource_id: str, compute_resource_private_key: str):
     init_compute_resource_node_function(dir='.', compute_resource_id=compute_resource_id, compute_resource_private_key=compute_resource_private_key)
 

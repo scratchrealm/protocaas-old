@@ -63,6 +63,10 @@ export type ComputeResourceGetAppsResponse = {
         name: string
         executablePath: string
         container?: string
+        awsBatch?: {
+            jobQueue: string
+            jobDefinition: string
+        }
     }[]
 }
 
@@ -72,7 +76,11 @@ export const isComputeResourceGetAppsResponse = (x: any): x is ComputeResourceGe
         apps: isArrayOf(y => validateObject(y, {
             name: isString,
             executablePath: isString,
-            container: optional(isString)
+            container: optional(isString),
+            awsBatch: optional((z: any) => validateObject(z, {
+                jobQueue: isString,
+                jobDefinition: isString
+            }))
         }))
     })
 }

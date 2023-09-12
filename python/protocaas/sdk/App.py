@@ -74,17 +74,26 @@ class App:
             app._processors.append(processor)
         return app
     @staticmethod
-    def from_executable(executable_path: str):
+    def from_executable(executable_path: str, container: str=None, aws_batch_job_queue: str=None, aws_batch_job_definition: str=None):
         with TemporaryDirectory() as tmpdir:
             spec_fname = os.path.join(tmpdir, 'spec.json')
-            # run executable with SPEC_OUTPUT_FILE set to spec_fname
-            env = os.environ.copy()
-            env['SPEC_OUTPUT_FILE'] = spec_fname
-            subprocess.run([executable_path], env=env)
+            if not container:
+                # run executable with SPEC_OUTPUT_FILE set to spec_fname
+                env = os.environ.copy()
+                env['SPEC_OUTPUT_FILE'] = spec_fname
+                subprocess.run([executable_path], env=env)
+            else:
+                # run executable in container
+                cmd = ['docker', 'run', '-it', '-v', f'{tmpdir}:{tmpdir}', '-e', f'SPEC_OUTPUT_FILE={spec_fname}', container, executable_path]
+                print(f'Running: {" ".join(cmd)}')
+                subprocess.run(cmd)
             with open(spec_fname, 'r') as f:
                 spec = json.load(f)
             a = App.from_spec(spec)
             setattr(a, '_executable_path', executable_path)
+            setattr(a, "_executable_container", container)
+            setattr(a, "_aws_batch_job_queue", aws_batch_job_queue)
+            setattr(a, "_aws_batch_job_definition", aws_batch_job_definition)
             return a
     def _run_job(self, *, job_id: str, job_private_key: str):
         job: Job = _get_job(job_id=job_id, job_private_key=job_private_key)

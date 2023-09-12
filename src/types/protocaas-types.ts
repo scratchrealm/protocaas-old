@@ -182,6 +182,10 @@ export type ProtocaasComputeResourceApp = {
     name: string
     executablePath: string
     container?: string
+    awsBatch?: {
+        jobQueue: string
+        jobDefinition: string
+    }
 }
 
 export type ProtocaasComputeResource = {
@@ -202,7 +206,11 @@ export const isProtocaasComputeResource = (x: any): x is ProtocaasComputeResourc
         apps: isArrayOf(y => (validateObject(y, {
             name: isString,
             executablePath: isString,
-            container: optional(isString)
+            container: optional(isString),
+            awsBatch: optional((z: any) => validateObject(z, {
+                jobQueue: isString,
+                jobDefinition: isString
+            }))
         }))),
         spec: optional(isComputeResourceSpec)
     })

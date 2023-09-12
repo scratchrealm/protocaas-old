@@ -1,9 +1,9 @@
 import subprocess
 import threading
 import os
-import signal
 from ..sdk.App import App
 from ..sdk._post_api_request import _post_api_request
+from ._run_job_in_aws_batch import _run_job_in_aws_batch
 
 
 class RunningJob:
@@ -26,19 +26,46 @@ class RunningJob:
         if not hasattr(self._app, '_executable_path'):
             raise Exception(f'App does not have an executable path')
         executable_path: str = self._app._executable_path
+        container: str = self._app._executable_container
+        aws_batch_job_queue: str = self._app._aws_batch_job_queue
+        aws_batch_job_definition: str = self._app._aws_batch_job_definition
+
+        if aws_batch_job_queue is not None:
+            if aws_batch_job_definition is None:
+                raise Exception(f'aws_batch_job_queue is set but aws_batch_job_definition is not set')
+            print(f'Running job in AWS Batch: {self._job_id} {aws_batch_job_queue} {aws_batch_job_definition}')
+            _run_job_in_aws_batch(
+                job_id=self._job_id,
+                job_private_key=self._job_private_key,
+                aws_batch_job_queue=aws_batch_job_queue,
+                aws_batch_job_definition=aws_batch_job_definition,
+                container=container, # for verifying consistent with job definition
+                command=executable_path # for verifying consistent with job definition
+            )
+            return
 
         # Note for future: it is not necessary to use a working dir if the job is to run in a container
         working_dir = os.getcwd() + '/jobs/' + self._job_id
         os.makedirs(working_dir, exist_ok=True)
 
         cmd = ['protocaas', 'run-job', '--job-id', self._job_id, '--job-private-key', self._job_private_key, '--executable-path', executable_path]
-        self._process = subprocess.Popen(
-            cmd,
-            cwd=working_dir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            env={**os.environ, 'PYTHONUNBUFFERED': '1'}
-        )
+        if not container:
+            self._process = subprocess.Popen(
+                cmd,
+                cwd=working_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env={**os.environ, 'PYTHONUNBUFFERED': '1'}
+            )
+        else:
+            cmd2 = ['docker', 'run', '-it', '-v', f'{working_dir}:/working', '-e', 'PYTHONUNBUFFERED=1', container] + cmd
+            print(f'Running: {" ".join(cmd2)}')
+            self._process = subprocess.Popen(
+                cmd2,
+                cwd=working_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
         prefix = f'{self._job_id} {self._processor_name}: '
         t1 = threading.Thread(target=stream_output, args=(self._process.stdout, prefix))
         t1.start()
