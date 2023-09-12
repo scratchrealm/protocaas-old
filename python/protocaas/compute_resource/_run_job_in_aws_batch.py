@@ -66,6 +66,16 @@ def _run_job_in_aws_batch(
                     'name': 'APP_EXECUTABLE',
                     'value': command
                 }
+            ],
+            'resourceRequirements': [
+                {
+                    'type': 'VCPU',
+                    'value': '4'
+                },
+                {
+                    'type': 'MEMORY',
+                    'value': '16384'
+                }
             ]
         }
     )
