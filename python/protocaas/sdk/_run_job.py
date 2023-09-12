@@ -20,6 +20,7 @@ def _run_job(*, job_id: str, job_private_key: str, app_executable: str):
     env['JOB_ID'] = job_id
     env['JOB_PRIVATE_KEY'] = job_private_key
     env['JOB_INTERNAL'] = '1'
+    env['PYTHONUNBUFFERED'] = '1'
     print(f'Running {app_executable} (Job ID: {job_id})) (Job private key: {job_private_key})')
     proc = subprocess.Popen(
         cmd,
