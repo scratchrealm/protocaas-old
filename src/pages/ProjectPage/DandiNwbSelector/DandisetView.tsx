@@ -1,5 +1,4 @@
-import { FunctionComponent, useEffect, useMemo, useReducer, useState } from "react"
-import Hyperlink from "../../../components/Hyperlink"
+import { FunctionComponent, useCallback, useEffect, useMemo, useReducer, useState } from "react"
 import formatByteCount from "../FileBrowser/formatByteCount"
 import { AssetsResponse, AssetsResponseItem, DandisetSearchResultItem, DandisetVersionInfo } from "./types"
 
@@ -7,11 +6,11 @@ type DandisetViewProps = {
     dandisetId: string
     width: number
     height: number
-    onClickAsset: (assetItem: AssetsResponseItem) => void
     useStaging?: boolean
+    onImportAssets?: (assetItems: AssetsResponseItem[]) => Promise<void>
 }
 
-const DandisetView: FunctionComponent<DandisetViewProps> = ({dandisetId, width, height, onClickAsset, useStaging}) => {
+const DandisetView: FunctionComponent<DandisetViewProps> = ({dandisetId, width, height, useStaging, onImportAssets}) => {
     const [dandisetResponse, setDandisetResponse] = useState<DandisetSearchResultItem | null>(null)
     const [dandisetVersionInfo, setDandisetVersionInfo] = useState<DandisetVersionInfo | null>(null)
     const [assetsResponses, setAssetsResponses] = useState<AssetsResponse[]>([])
@@ -96,6 +95,24 @@ const DandisetView: FunctionComponent<DandisetViewProps> = ({dandisetId, width, 
         return rr
     }, [assetsResponses])
 
+    const [selectedAssets, selectedAssetsDispatch] = useReducer(selectedAssetsReducer, {assetPaths: []})
+
+    const [importing, setImporting] = useState(false)
+
+    const handleImport = useCallback(async () => {
+        if (!onImportAssets) return
+        const assetsToImport = allAssets.filter(assetItem => selectedAssets.assetPaths.includes(assetItem.path))
+        setImporting(true)
+        try {
+            await onImportAssets(assetsToImport)
+            // deselect all assets
+            selectedAssetsDispatch({type: 'set-multiple', assetPaths: selectedAssets.assetPaths, selected: false})
+        }
+        finally {
+            setImporting(false)
+        }
+    }, [onImportAssets, allAssets, selectedAssets])
+
     if (!dandisetResponse) return <div>Loading dandiset...</div>
     if (!dandisetVersionInfo) return <div>Loading dandiset info...</div>
     
@@ -103,34 +120,47 @@ const DandisetView: FunctionComponent<DandisetViewProps> = ({dandisetId, width, 
 
     const externalLink = `https://${stagingStr2}dandiarchive.org/dandiset/${dandisetId}/${X.version}`
 
+    const topBarHeight = 30
+    const buttonColor = selectedAssets.assetPaths.length > 0 ? 'darkgreen' : 'gray'
     return (
-        <div style={{position: 'absolute', width, height, overflowY: 'auto'}}>
-            <div style={{fontSize: 20, fontWeight: 'bold', padding: 5}}>
-                <a href={externalLink} target="_blank" rel="noreferrer" style={{color: 'black'}}>{X.dandiset.identifier} ({X.version}): {X.name}</a>
-            </div>
-            <div style={{fontSize: 14, padding: 5}}>
+        <div style={{position: 'absolute', width, height, overflowY: 'hidden'}}>
+            <div style={{position: 'absolute', top: 0, width, height: topBarHeight, borderBottom: 'solid 1px #ccc'}}>
                 {
-                    X.metadata.contributor.map((c, i) => (
-                        <span key={i}>{c.name}; </span>
-                    ))
+                    !importing ? (
+                        <button onClick={selectedAssets.assetPaths.length > 0 ? handleImport : undefined} disabled={selectedAssets.assetPaths.length === 0} style={{fontSize: 20, color: buttonColor}}>Import selected assets</button>
+                    ) : (
+                        <span style={{fontSize: 20, color: 'gray'}}>Importing...</span>
+                    )
                 }
             </div>
-            <div style={{fontSize: 14, padding: 5}}>
-                {X.metadata.description}
-            </div>
-            {
-                <div style={{fontSize: 14, padding: 5}}>
-                    <span style={{color: 'gray'}}>Loaded {allAssets.length} assets</span>
+            <div style={{position: 'absolute', top: topBarHeight, width, height: height - topBarHeight, overflowY: 'auto'}}>
+                <div style={{fontSize: 20, fontWeight: 'bold', padding: 5}}>
+                    <a href={externalLink} target="_blank" rel="noreferrer" style={{color: 'black'}}>{X.dandiset.identifier} ({X.version}): {X.name}</a>
                 </div>
-            }
-            {
-                incomplete && (
+                <div style={{fontSize: 14, padding: 5}}>
+                    {
+                        X.metadata.contributor.map((c, i) => (
+                            <span key={i}>{c.name}; </span>
+                        ))
+                    }
+                </div>
+                <div style={{fontSize: 14, padding: 5}}>
+                    {X.metadata.description}
+                </div>
+                {
                     <div style={{fontSize: 14, padding: 5}}>
-                        <span style={{color: 'red'}}>Warning: only showing first {assetsResponses.length} pages of assets</span>
+                        <span style={{color: 'gray'}}>Loaded {allAssets.length} assets</span>
                     </div>
-                )
-            }
-            <AssetsBrowser assetItems={allAssets} onClick={onClickAsset} />
+                }
+                {
+                    incomplete && (
+                        <div style={{fontSize: 14, padding: 5}}>
+                            <span style={{color: 'red'}}>Warning: only showing first {assetsResponses.length} pages of assets</span>
+                        </div>
+                    )
+                }
+                <AssetsBrowser assetItems={allAssets} selectedAssets={selectedAssets} selectedAssetsDispatch={selectedAssetsDispatch} />
+            </div>
         </div>
     )
 }
@@ -158,12 +188,53 @@ const expandedFoldersReducer = (state: ExpandedFoldersState, action: ExpandedFol
     }
 }
 
-type AssetsBrowserProps = {
-    assetItems: AssetsResponseItem[]
-    onClick: (assetItem: AssetsResponseItem) => void
+type SelectedAssetsState = {
+    assetPaths: string[]
 }
 
-const AssetsBrowser: FunctionComponent<AssetsBrowserProps> = ({assetItems, onClick}) => {
+type SelectedAssetsAction = {
+    type: 'toggle'
+    assetPath: string
+} | {
+    type: 'set-multiple'
+    assetPaths: string[]
+    selected: boolean
+}
+
+const selectedAssetsReducer = (state: SelectedAssetsState, action: SelectedAssetsAction) => {
+    switch (action.type) {
+        case 'toggle': {
+            const assetPath = action.assetPath
+            const newState = {...state}
+            const index = newState.assetPaths.indexOf(assetPath)
+            if (index === -1) newState.assetPaths.push(assetPath)
+            else newState.assetPaths.splice(index, 1)
+            return newState
+        }
+        case 'set-multiple': {
+            const {assetPaths, selected} = action
+            const newState = {...state}
+            if (selected) {
+                newState.assetPaths = [...new Set([...newState.assetPaths, ...assetPaths])]
+            }
+            else {
+                newState.assetPaths = newState.assetPaths.filter(assetPath => !assetPaths.includes(assetPath))
+            }
+            return newState
+        }
+        default: {
+            throw Error('Unexpected action type')
+        }
+    }
+}
+
+type AssetsBrowserProps = {
+    assetItems: AssetsResponseItem[]
+    selectedAssets: SelectedAssetsState
+    selectedAssetsDispatch: (action: SelectedAssetsAction) => void
+}
+
+const AssetsBrowser: FunctionComponent<AssetsBrowserProps> = ({assetItems, selectedAssets, selectedAssetsDispatch}) => {
     const folders: string[] = useMemo(() => {
         const folders = assetItems.filter(a => (a.path.includes('/'))).map(assetItem => assetItem.path.split('/')[0])
         const uniqueFolders = [...new Set(folders)].sort()
@@ -186,13 +257,20 @@ const AssetsBrowser: FunctionComponent<AssetsBrowserProps> = ({assetItems, onCli
                         {folder}
                     </div>
                     <div style={{padding: 5}}>
-                        {
+                        {expandedFolders[folder] && (
+                            <AssetItemsTable
+                                assetItems={assetItems.filter(assetItem => assetItem.path.startsWith(folder + '/'))}
+                                selectedAssets={selectedAssets}
+                                selectedAssetsDispatch={selectedAssetsDispatch}
+                            />
+                        )}
+                        {/* {
                             expandedFolders[folder] && (
                                 assetItems.filter(assetItem => assetItem.path.startsWith(folder + '/')).map(assetItem => (
                                     <AssetItemView key={assetItem.asset_id} assetItem={assetItem} onClick={() => onClick(assetItem)} />
                                 ))
                             )
-                        }
+                        } */}
                     </div>
                 </div>
             ))}  
@@ -200,28 +278,95 @@ const AssetsBrowser: FunctionComponent<AssetsBrowserProps> = ({assetItems, onCli
     )
 }
 
-type AssetItemViewProps = {
-    assetItem: AssetsResponseItem
-    onClick: () => void
+type AssetItemsTableProps = {
+    assetItems: AssetsResponseItem[]
+    selectedAssets: SelectedAssetsState
+    selectedAssetsDispatch: (action: SelectedAssetsAction) => void
 }
 
-const AssetItemView: FunctionComponent<AssetItemViewProps> = ({assetItem, onClick}) => {
+const AssetItemsTable: FunctionComponent<AssetItemsTableProps> = ({assetItems, selectedAssets, selectedAssetsDispatch}) => {
+    const selectAllCheckedState = useMemo(() => {
+        const numSelected = assetItems.filter(assetItem => selectedAssets.assetPaths.includes(assetItem.path)).length
+        if (numSelected === 0) return false
+        if (numSelected === assetItems.length) return true
+        return null // null means indeterminate
+    }, [assetItems, selectedAssets])
+    const handleClickSelectAll = useCallback(() => {
+        if (selectAllCheckedState === true) {
+            selectedAssetsDispatch({type: 'set-multiple', assetPaths: assetItems.map(assetItem => assetItem.path), selected: false})
+        }
+        else {
+            selectedAssetsDispatch({type: 'set-multiple', assetPaths: assetItems.map(assetItem => assetItem.path), selected: true})
+        }
+    }, [assetItems, selectAllCheckedState, selectedAssetsDispatch])
+
+    return (
+        <table className="table1">
+            <thead>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style={{width: 20}}>
+                        <Checkbox checked={selectAllCheckedState} onClick={handleClickSelectAll} />
+                    </td>
+                </tr>
+                {
+                    assetItems.map(assetItem => (
+                        <AssetItemRow
+                            key={assetItem.path}
+                            assetItem={assetItem}
+                            selected={selectedAssets.assetPaths.includes(assetItem.path)}
+                            onToggleSelection={() => selectedAssetsDispatch({type: 'toggle', assetPath: assetItem.path})}
+                        />
+                    ))
+                }
+            </tbody>
+        </table>
+    )
+}
+
+type AssetItemRowProps = {
+    assetItem: AssetsResponseItem
+    selected: boolean
+    onToggleSelection: () => void
+}
+
+const AssetItemRow: FunctionComponent<AssetItemRowProps> = ({assetItem, selected, onToggleSelection}) => {
     const {created, modified, path, size} = assetItem
 
     return (
-        <div style={{padding: 5}}>
-            <div style={{fontSize: 14, fontWeight: 'bold'}}>
-                <Hyperlink onClick={onClick} disabled={!path.endsWith('.nwb')}>
-                    {path.split('/').slice(1).join('/')}
-                </Hyperlink>
-                &nbsp;
+        <tr>
+            <td style={{width: 20}}>
+                <Checkbox checked={selected} onClick={onToggleSelection} />
+            </td>
+            <td>
+                {path.split('/').slice(1).join('/')}
+            </td>
+            <td>
                 {formatTime2(modified)}
-                &nbsp;
+            </td>
+            <td>
                 {formatByteCount(size)}
-            </div>
-        </div>
+            </td>
+        </tr>
     )
 }
+
+const Checkbox: FunctionComponent<{checked: boolean | null, onClick: () => void}> = ({checked, onClick}) => {
+    // null means indeterminate
+    return (
+        <input
+            ref={input => {
+                if (!input) return
+                input.indeterminate = checked === null
+            }}
+            type="checkbox"
+            checked={checked === true}
+            onChange={onClick}
+        />
+    )
+}
+
 
 const formatTime2 = (time: string) => {
     const date = new Date(time)

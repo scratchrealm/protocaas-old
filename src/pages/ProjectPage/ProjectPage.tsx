@@ -133,34 +133,52 @@ const MainPanel: FunctionComponent<MainPanelProps> = ({width, height}) => {
     if (route.page !== 'project') throw Error(`Unexpected route ${JSON.stringify(route)}`)
     const currentView = route.tab || 'project-home'
 
-    const handleCreateFile = useCallback(async (fileName: string, o: {url: string, metadata: any}) => {
+    const handleCreateFiles = useCallback(async (files: {fileName: string, url: string, metadata: any}[]) => {
         if (!project) {
             console.warn('No project')
             return
         }
-        await setUrlFile(project.workspaceId, project.projectId, fileName, o.url, o.metadata, auth)
+        for (const file of files) {
+            await setUrlFile(project.workspaceId, project.projectId, file.fileName, file.url, file.metadata, auth)
+        }
         refreshFiles()
-        openTab(`file:${fileName}`)
+        if (files.length === 1) {
+            openTab(`file:${files[0].fileName}`)
+        }
         setRoute({page: 'project', projectId: project.projectId, tab: 'project-files'})
     }, [project, openTab, auth, refreshFiles, setRoute])
 
-    const handleImportDandiNwbFile = useCallback((nwbUrl: string, dandisetId: string, dandisetVersion: string, assetId: string, assetPath: string, useStaging: boolean) => {
-        const metadata = {
-            dandisetId,
-            dandisetVersion,
-            dandiAssetId: assetId,
-            dandiAssetPath: assetPath,
-            dandiStaging: useStaging
+    const handleImportDandiNwbFiles = useCallback(async (files: {nwbUrl: string, dandisetId: string, dandisetVersion: string, assetId: string, assetPath: string, useStaging: boolean}[]) => {
+        const files2: {
+            fileName: string
+            url: string
+            metadata: {
+                dandisetId: string
+                dandisetVersion: string
+                dandiAssetId: string
+                dandiAssetPath: string
+                dandiStaging: boolean
+            }
+        }[] = []
+        for (const file of files) {
+            const stagingStr = file.useStaging ? 'staging-' : ''
+            const fileName = stagingStr + file.dandisetId + '/' + file.assetPath
+            const metadata = {
+                dandisetId: file.dandisetId,
+                dandisetVersion: file.dandisetVersion,
+                dandiAssetId: file.assetId,
+                dandiAssetPath: file.assetPath,
+                dandiStaging: file.useStaging
+            }
+            files2.push({fileName, url: file.nwbUrl, metadata})
         }
-        const stagingStr3 = useStaging ? 'staging-' : ''
-        const fileName = stagingStr3 + dandisetId + '/' + assetPath
-        handleCreateFile(fileName, {url: nwbUrl, metadata})
-    }, [handleCreateFile])
+        await handleCreateFiles(files2)
+    }, [handleCreateFiles])
 
     const handleImportManualNwbFile = useCallback((nwbUrl: string, fileName: string) => {
         const metadata = {}
-        handleCreateFile(fileName, {url: nwbUrl, metadata})
-    }, [handleCreateFile])
+        handleCreateFiles([{fileName, url: nwbUrl, metadata}])
+    }, [handleCreateFiles])
 
     return (
         <div style={{position: 'absolute', width, height, overflow: 'hidden', background: 'white'}}>
@@ -186,7 +204,7 @@ const MainPanel: FunctionComponent<MainPanelProps> = ({width, height}) => {
                 <DandiNwbSelector
                     width={width}
                     height={height}
-                    onNwbFileSelected={handleImportDandiNwbFile}
+                    onNwbFilesSelected={handleImportDandiNwbFiles}
                 />
             </div>
             <div style={{position: 'absolute', width, height, visibility: currentView === 'manual-import' ? undefined : 'hidden'}}>

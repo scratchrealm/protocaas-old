@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useState } from "react"
+import { FunctionComponent, useCallback, useEffect, useState } from "react"
 import Hyperlink from "../../../components/Hyperlink"
 import Splitter from "../../../components/Splitter"
 import formatByteCount from "../FileBrowser/formatByteCount"
@@ -9,36 +9,46 @@ type SearchResultsProps = {
     width: number
     height: number
     searchResults: DandisetSearchResultItem[]
-    onClickAsset: (dandisetId: string, dandisetVersion: string, assetItem: AssetsResponseItem) => void
+    onImportItems: (items: {dandisetId: string, dandisetVersion: string, assetItem: AssetsResponseItem}[]) => Promise<void>
     useStaging?: boolean
 }
 
-const SearchResults: FunctionComponent<SearchResultsProps> = ({width, height, searchResults, onClickAsset, useStaging}) => {
-    const [selectedItem, setSelectedItem] = useState<DandisetSearchResultItem | null>(null)
+const SearchResults: FunctionComponent<SearchResultsProps> = ({width, height, searchResults, onImportItems, useStaging}) => {
+    const [selectedDandisetItem, setSelectedDandisetItem] = useState<DandisetSearchResultItem | null>(null)
     useEffect(() => {
         // reset the selected item when the useStaging changes
-        setSelectedItem(null)
+        setSelectedDandisetItem(null)
     }, [useStaging])
+    const handleImportAssets = useCallback(async (assetItems: AssetsResponseItem[]) => {
+        if (!selectedDandisetItem) return
+        const {identifier, most_recent_published_version, draft_version} = selectedDandisetItem
+        const dandisetId = identifier
+        const dandisetVersion = most_recent_published_version?.version || draft_version?.version || ''
+        const items = assetItems.map(assetItem => ({dandisetId, dandisetVersion, assetItem}))
+        await onImportItems(items)
+    }, [selectedDandisetItem, onImportItems])
     return (
         <Splitter
             width={width}
             height={height}
             initialPosition={width / 2}
             direction='horizontal'
-            hideSecondChild={!selectedItem}
+            hideSecondChild={!selectedDandisetItem}
         >
             <SearchResultsLeft
                 width={0}
                 height={0}
                 searchResults={searchResults}
-                setSelectedItem={setSelectedItem}
-                onClickAsset={onClickAsset} // not actually needed
+                setSelectedItem={setSelectedDandisetItem}
+                onImportItems={onImportItems} // not actually needed
+                // onClickAsset={onClickAsset} // not actually needed
             />
             <DandisetView
-                dandisetId={selectedItem?.identifier || ''}
+                dandisetId={selectedDandisetItem?.identifier || ''}
                 width={0}
                 height={0}
-                onClickAsset={(assetItem: AssetsResponseItem) => {onClickAsset(selectedItem?.identifier || '', selectedItem?.most_recent_published_version?.version || 'draft', assetItem)}}
+                // onClickAsset={(assetItem: AssetsResponseItem) => {onClickAsset(selectedItem?.identifier || '', selectedItem?.most_recent_published_version?.version || 'draft', assetItem)}}
+                onImportAssets={handleImportAssets}
                 useStaging={useStaging}
             />
         </Splitter>

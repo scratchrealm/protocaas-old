@@ -7,12 +7,12 @@ import { AssetResponse, AssetsResponseItem, DandisetSearchResultItem, DandisetsR
 type Props = {
     width: number
     height: number
-    onNwbFileSelected: (nwbUrl: string, dandisetId: string, dandisetVersion: string, assetId: string, assetPath: string, useStaging: boolean) => void
+    onNwbFilesSelected: (files: {nwbUrl: string, dandisetId: string, dandisetVersion: string, assetId: string, assetPath: string, useStaging: boolean}[]) => Promise<void>
 }
 
 const topBarHeight = 30
 const searchBarHeight = 50
-const DandiNwbSelector: FunctionComponent<Props> = ({width, height, onNwbFileSelected}) => {
+const DandiNwbSelector: FunctionComponent<Props> = ({width, height, onNwbFilesSelected}) => {
     const [searchText, setSearchText] = useState<string>('')
     const [searchResult, setSearchResults] = useState<DandisetSearchResultItem[]>([])
     const [useStaging, setUseStaging] = useState<boolean>(false)
@@ -33,17 +33,21 @@ const DandiNwbSelector: FunctionComponent<Props> = ({width, height, onNwbFileSel
         return () => {canceled = true}
     }, [searchText, stagingStr])
 
-    const handleClickAsset = useCallback(async (dandisetId: string, dandisetVersion: string, assetItem: AssetsResponseItem) => {
-        const response = await fetch(`https://api${stagingStr}.dandiarchive.org/api/dandisets/${dandisetId}/versions/${dandisetVersion}/assets/${assetItem.asset_id}/`)
-        if (response.status === 200) {
-            const json = await response.json()
-            const assetResponse: AssetResponse = json
-            let nwbUrl = assetResponse.contentUrl.find(url => url.includes('amazonaws.com'))
-            if (!nwbUrl) nwbUrl = assetResponse.contentUrl[0]
-            if (!nwbUrl) return
-            onNwbFileSelected(nwbUrl, dandisetId, dandisetVersion, assetItem.asset_id, assetItem.path, useStaging)
+    const handleImportItems = useCallback(async (items: {dandisetId: string, dandisetVersion: string, assetItem: AssetsResponseItem}[]) => {
+        const files: {nwbUrl: string, dandisetId: string, dandisetVersion: string, assetId: string, assetPath: string, useStaging: boolean}[] = []
+        for (const item of items) {
+            const response = await fetch(`https://api${stagingStr}.dandiarchive.org/api/dandisets/${item.dandisetId}/versions/${item.dandisetVersion}/assets/${item.assetItem.asset_id}/`)
+            if (response.status === 200) {
+                const json = await response.json()
+                const assetResponse: AssetResponse = json
+                let nwbUrl = assetResponse.contentUrl.find(url => url.includes('amazonaws.com'))
+                if (!nwbUrl) nwbUrl = assetResponse.contentUrl[0]
+                if (!nwbUrl) return
+                files.push({nwbUrl, dandisetId: item.dandisetId, dandisetVersion: item.dandisetVersion, assetId: item.assetItem.asset_id, assetPath: item.assetItem.path, useStaging})
+            }
         }
-    }, [onNwbFileSelected, stagingStr, useStaging])
+        await onNwbFilesSelected(files)
+    }, [onNwbFilesSelected, stagingStr, useStaging])
 
     return (
         <div style={{position: 'absolute', width, height, background: 'white'}}>
@@ -63,7 +67,7 @@ const DandiNwbSelector: FunctionComponent<Props> = ({width, height, onNwbFileSel
                     width={width}
                     height={height - searchBarHeight}
                     searchResults={searchResult}
-                    onClickAsset={handleClickAsset}
+                    onImportItems={handleImportItems}
                     useStaging={useStaging}
                 />
             </div>
