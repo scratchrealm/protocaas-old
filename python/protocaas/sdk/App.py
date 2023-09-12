@@ -9,6 +9,7 @@ from .InputFile import InputFile
 from .OutputFile import OutputFile
 from .AppProcessor import AppProcessor
 from ._post_api_request import _post_api_request
+from ._run_job import _run_job
 
 
 @dataclass
@@ -39,6 +40,8 @@ class App:
     def run(self):
         JOB_ID = os.environ.get('JOB_ID', None)
         JOB_PRIVATE_KEY = os.environ.get('JOB_PRIVATE_KEY', None)
+        JOB_INTERNAL = os.environ.get('JOB_INTERNAL', None)
+        APP_EXECUTABLE = os.environ.get('APP_EXECUTABLE', None)
         SPEC_OUTPUT_FILE = os.environ.get('SPEC_OUTPUT_FILE', None)
         if SPEC_OUTPUT_FILE is not None:
             if JOB_ID is not None:
@@ -49,7 +52,20 @@ class App:
         if JOB_ID is not None:
             if JOB_PRIVATE_KEY is None:
                 raise Exception('JOB_PRIVATE_KEY is not set')
-            return self._run_job(job_id=JOB_ID, job_private_key=JOB_PRIVATE_KEY)
+            if JOB_INTERNAL == '1':
+                # In this mode, we run the job directly
+                # Not interacting with the protocaas API
+                # This is called internally by the other run mode (need to explain this better)
+                return self._run_job(job_id=JOB_ID, job_private_key=JOB_PRIVATE_KEY)
+            else:
+                # In this mode we run the job, including interacting with the protocaas API
+                if APP_EXECUTABLE is None:
+                    raise Exception('APP_EXECUTABLE is not set')
+                _run_job(
+                    job_id=JOB_ID,
+                    job_private_key=JOB_PRIVATE_KEY,
+                    app_executable=APP_EXECUTABLE
+                )
         raise Exception('You must set one of the following environment variables: JOB_ID, SPEC_OUTPUT_FILE')
     def get_spec(self):
         processors = []

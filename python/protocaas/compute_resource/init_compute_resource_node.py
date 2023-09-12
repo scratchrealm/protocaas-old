@@ -17,7 +17,10 @@ env_var_keys = [
     'OUTPUT_AWS_ACCESS_KEY_ID',
     'OUTPUT_AWS_SECRET_ACCESS_KEY',
     'OUTPUT_BUCKET',
-    'OUTPUT_BUCKET_BASE_URL'
+    'OUTPUT_BUCKET_BASE_URL',
+    'BATCH_AWS_ACCESS_KEY_ID',
+    'BATCH_AWS_SECRET_ACCESS_KEY',
+    'BATCH_AWS_REGION'
 ]
 
 def init_compute_resource_node(*, dir: str, compute_resource_id: Optional[str]=None, compute_resource_private_key: Optional[str]=None):

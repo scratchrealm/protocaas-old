@@ -1,4 +1,5 @@
 from typing import List
+import os
 
 # You must first setup the AWS credentials
 # You can do this in multiple ways like using the aws configure command
@@ -10,12 +11,28 @@ def _run_job_in_aws_batch(
     job_private_key: str,
     aws_batch_job_queue: str,
     aws_batch_job_definition: str,
+    app_executable: str,
     container: str, # for verifying consistent with job definition
     command: str # for verifying consistent with job definition
 ):
     import boto3
 
-    client = boto3.client('batch')
+    aws_access_key_id = os.getenv('BATCH_AWS_ACCESS_KEY_ID', None)
+    if aws_access_key_id is None:
+        raise Exception('BATCH_AWS_ACCESS_KEY_ID is not set')
+    aws_secret_access_key = os.getenv('BATCH_AWS_SECRET_ACCESS_KEY', None)
+    if aws_secret_access_key is None:
+        raise Exception('BATCH_AWS_SECRET_ACCESS_KEY is not set')
+    aws_region = os.getenv('BATCH_AWS_REGION', None)
+    if aws_region is None:
+        raise Exception('BATCH_AWS_REGION is not set')
+
+    client = boto3.client(
+        'batch',
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        region_name=aws_region
+    )
 
     job_def_resp = client.describe_job_definitions(jobDefinitionName=aws_batch_job_definition)
     job_defs = job_def_resp['jobDefinitions']
@@ -44,6 +61,10 @@ def _run_job_in_aws_batch(
                 {
                     'name': 'JOB_PRIVATE_KEY',
                     'value': job_private_key
+                },
+                {
+                    'name': 'APP_EXECUTABLE',
+                    'value': command
                 }
             ]
         }

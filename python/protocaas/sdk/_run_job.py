@@ -3,7 +3,7 @@ import threading
 import queue
 import time
 import subprocess
-from ..sdk._post_api_request import _post_api_request
+from ._post_api_request import _post_api_request
 
 
 # This function is called internally by the compute resource daemon through the protocaas CLI
@@ -12,7 +12,7 @@ from ..sdk._post_api_request import _post_api_request
 # * Monitors the job output, updating the database periodically via the API
 # * Sets the job status to completed or failed in the database via the API
 
-def run_job(*, job_id: str, job_private_key: str, app_executable: str):
+def _run_job(*, job_id: str, job_private_key: str, app_executable: str):
     _set_job_status(job_id=job_id, job_private_key=job_private_key, status='running')
 
     cmd = app_executable

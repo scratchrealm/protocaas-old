@@ -34,31 +34,59 @@ class RunningJob:
             if aws_batch_job_definition is None:
                 raise Exception(f'aws_batch_job_queue is set but aws_batch_job_definition is not set')
             print(f'Running job in AWS Batch: {self._job_id} {aws_batch_job_queue} {aws_batch_job_definition}')
-            _run_job_in_aws_batch(
-                job_id=self._job_id,
-                job_private_key=self._job_private_key,
-                aws_batch_job_queue=aws_batch_job_queue,
-                aws_batch_job_definition=aws_batch_job_definition,
-                container=container, # for verifying consistent with job definition
-                command=executable_path # for verifying consistent with job definition
-            )
+            try:
+                _run_job_in_aws_batch(
+                    job_id=self._job_id,
+                    job_private_key=self._job_private_key,
+                    aws_batch_job_queue=aws_batch_job_queue,
+                    aws_batch_job_definition=aws_batch_job_definition,
+                    app_executable=executable_path,
+                    container=container, # for verifying consistent with job definition
+                    command=executable_path # for verifying consistent with job definition
+                )
+            except Exception as e:
+                print(f'Error running job in AWS Batch: {e}')
+                req = {
+                    'type': 'processor.setJobStatus',
+                    'jobId': self._job_id,
+                    'jobPrivateKey': self._job_private_key,
+                    'status': 'failed',
+                    'error': str(e)
+                }
+                resp = _post_api_request(req)
+                if not resp['success']:
+                    raise Exception(f'Error setting job status to failed: {resp["error"]}')
             return
 
         # Note for future: it is not necessary to use a working dir if the job is to run in a container
         working_dir = os.getcwd() + '/jobs/' + self._job_id
         os.makedirs(working_dir, exist_ok=True)
 
-        cmd = ['protocaas', 'run-job', '--job-id', self._job_id, '--job-private-key', self._job_private_key, '--executable-path', executable_path]
         if not container:
             self._process = subprocess.Popen(
-                cmd,
+                [executable_path],
                 cwd=working_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                env={**os.environ, 'PYTHONUNBUFFERED': '1'}
+                env={
+                    **os.environ,
+                    'PYTHONUNBUFFERED': '1',
+                    'JOB_ID': self._job_id,
+                    'JOB_PRIVATE_KEY': self._job_private_key,
+                    'APP_EXECUTABLE': executable_path
+                }
             )
         else:
-            cmd2 = ['docker', 'run', '-it', '-v', f'{working_dir}:/working', '-e', 'PYTHONUNBUFFERED=1', container] + cmd
+            cmd2 = [
+                'docker', 'run', '-it',
+                '-v', f'{working_dir}:/working',
+                '-e', 'PYTHONUNBUFFERED=1',
+                '-e', f'JOB_ID={self._job_id}',
+                '-e', f'JOB_PRIVATE_KEY={self._job_private_key}',
+                '-e', f'APP_EXECUTABLE={executable_path}',
+                container,
+                executable_path
+            ]
             print(f'Running: {" ".join(cmd2)}')
             self._process = subprocess.Popen(
                 cmd2,
@@ -81,8 +109,12 @@ class RunningJob:
             self._process.stdout.close()
             self._process.stderr.close()
     def is_alive(self):
+        if self._process is None:
+            return False
         return self._process.poll() is None
     def retcode(self):
+        if self._process is None:
+            return None
         return self._process.poll()
 
 def stream_output(pipe, prefix: str):
