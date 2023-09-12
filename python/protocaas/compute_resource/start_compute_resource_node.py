@@ -7,7 +7,7 @@ from .init_compute_resource_node import env_var_keys
 from ..sdk.App import App
 from ..sdk._post_api_request import _post_api_request
 from .RunningJob import RunningJob
-from .run_job import _set_job_status
+from ..sdk._run_job import _set_job_status
 from .PubsubClient import PubsubClient
 from .crypto_keys import sign_message
 
