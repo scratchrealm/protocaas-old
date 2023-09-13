@@ -41,7 +41,7 @@ const setJobPropertyHandler = async (request: SetJobPropertyRequest, o: {verifie
     if (request.property === 'status') {
         update.status = request.value
         if (request.value === 'running') {
-            update.timestampRunning = Date.now() / 1000
+            update.timestampStarted = Date.now() / 1000
         }
         else if (request.value === 'queued') {
             update.timestampQueued = Date.now() / 1000

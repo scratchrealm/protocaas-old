@@ -104,7 +104,7 @@ const JobView: FunctionComponent<Props> = ({ width, height, jobId }) => {
                     </tr>
                     <tr>
                         <td>Elapsed time (sec)</td>
-                        <td>{(job.status === 'completed' || job.status === 'failed') ? (job.timestampFinished || 0) - (job.timestampRunning || 0) : ''}</td>
+                        <td>{(job.status === 'completed' || job.status === 'failed') ? (job.timestampFinished || 0) - (job.timestampStarted || 0) : ''}</td>
                     </tr>
                 </tbody>
             </table>
