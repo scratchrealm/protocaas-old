@@ -110,6 +110,21 @@ const processorSetJobStatusHandler = async (request: ProcessorSetJobStatusReques
     if (request.error) {
         update['error'] = request.error
     }
+    if (newStatus === 'queued') {
+        update['timestampQueued'] = Date.now() / 1000
+    }
+    else if (newStatus === 'starting') {
+        update['timestampStarting'] = Date.now() / 1000
+    }
+    else if (newStatus === 'running') {
+        update['timestampStarted'] = Date.now() / 1000
+    }
+    else if (newStatus === 'completed') {
+        update['timestampFinished'] = Date.now() / 1000
+    }
+    else if (newStatus === 'failed') {
+        update['timestampFinished'] = Date.now() / 1000
+    }
 
     await jobsCollection.updateOne({
         jobId: request.jobId

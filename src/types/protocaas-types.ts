@@ -85,7 +85,8 @@ export type ProtocaasJob = {
     computeResourceNodeName?: string
     consoleOutput?: string
     timestampQueued?: number
-    timestampRunning?: number
+    timestampStarting?: number
+    timestampStarted?: number
     timestampFinished?: number
     outputFileIds?: string[]
     processorSpec: ComputeResourceSpecProcessor
@@ -123,7 +124,8 @@ export const isProtocaasJob = (x: any): x is ProtocaasJob => {
         computeResourceNodeName: optional(isString),
         consoleOutput: optional(isString),
         timestampQueued: optional(isNumber),
-        timestampRunning: optional(isNumber),
+        timestampStarting: optional(isNumber),
+        timestampStarted: optional(isNumber),
         timestampFinished: optional(isNumber),
         outputFileIds: optional(isArrayOf(isString)),
         processorSpec: isComputeResourceSpecProcessor
