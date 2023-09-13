@@ -364,7 +364,7 @@ export const FileIcon: FunctionComponent<{fileName: string}> = ({fileName}) => {
     }
 }
 
-const Checkbox: FunctionComponent<{checked: boolean | null, onClick: () => void}> = ({checked, onClick}) => {
+export const Checkbox: FunctionComponent<{checked: boolean | null, onClick: () => void}> = ({checked, onClick}) => {
     // null means indeterminate
     return (
         <input

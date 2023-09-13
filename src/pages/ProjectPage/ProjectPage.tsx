@@ -32,7 +32,7 @@ const ProjectPage: FunctionComponent<Props> = ({projectId, width, height}) => {
     )
 }
 
-export type ProjectPageViewType = 'project-home' | 'project-files' | 'project-jobs' | 'dandi-import' | 'manual-import' | 'processors'
+export type ProjectPageViewType = 'project-home' | 'project-files' | 'project-jobs' | 'dandi-import' | 'manual-import' | 'processors' | 'compute-resource'
 
 type ProjectPageView = {
     type: ProjectPageViewType
@@ -63,6 +63,10 @@ const projectPageViews: ProjectPageView[] = [
     {
         type: 'processors',
         label: 'Processors'
+    },
+    {
+        type: 'compute-resource',
+        label: 'Compute resource'
     }
 ]
 
@@ -219,6 +223,9 @@ const MainPanel: FunctionComponent<MainPanelProps> = ({width, height}) => {
                     width={width}
                     height={height}
                 />
+            </div>
+            <div style={{position: 'absolute', width, height, visibility: currentView === 'compute-resource' ? undefined : 'hidden'}}>
+                Compute resource
             </div>
         </div>
     )

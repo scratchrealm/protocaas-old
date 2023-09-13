@@ -3,7 +3,7 @@ import { useModalDialog } from "../../ApplicationBar"
 import Hyperlink from "../../components/Hyperlink"
 import ModalWindow from "../../components/ModalWindow/ModalWindow"
 import { ProtocaasComputeResource } from "../../types/protocaas-types"
-import { selectedStringsReducer, TableCheckbox } from "../ProjectPage/FileBrowser/FileBrowser2"
+import { Checkbox, selectedStringsReducer } from "../ProjectPage/FileBrowser/FileBrowser2"
 import ComputeResourceAppsTableMenuBar from "./ComputeResourceAppsTableMenuBar"
 import NewAppWindow from "./NewAppWindow"
 
@@ -57,7 +57,7 @@ const ComputeResourceAppsTable: FunctionComponent<Props> = ({width, height, comp
                             computeResource.apps.map((app) => (
                                 <tr key={app.name}>
                                     <td style={{width: colWidth}}>
-                                        <TableCheckbox checked={selectedAppNames.has(app.name)} onClick={() => selectedAppNamesDispatch({type: 'toggle', value: app.name})} />
+                                        <Checkbox checked={selectedAppNames.has(app.name)} onClick={() => selectedAppNamesDispatch({type: 'toggle', value: app.name})} />
                                     </td>
                                     <td>
                                         <Hyperlink onClick={() => onAppClicked(app.name)}>

@@ -7,7 +7,7 @@ import { confirm } from "../../../confirm_prompt_alert";
 import { timeAgoString } from "../../../timeStrings";
 import { ProtocaasJob } from "../../../types/protocaas-types";
 import UserIdComponent from "../../../UserIdComponent";
-import { selectedStringsReducer, TableCheckbox } from "../FileBrowser/FileBrowser2";
+import { Checkbox, selectedStringsReducer } from "../FileBrowser/FileBrowser2";
 import { useProject } from "../ProjectPageContext";
 import JobsTableMenuBar from "./JobsTableMenuBar";
 
@@ -75,7 +75,7 @@ const JobsTable: FunctionComponent<Props> = ({ width, height, fileName, jobs, on
                                 return (
                                     <tr key={jj.jobId}>
                                         <td style={{width: colWidth}}>
-                                            <TableCheckbox checked={selectedJobIds.has(jj.jobId)} onClick={() => selectedJobIdsDispatch({type: 'toggle', value: jj.jobId})} />
+                                            <Checkbox checked={selectedJobIds.has(jj.jobId)} onClick={() => selectedJobIdsDispatch({type: 'toggle', value: jj.jobId})} />
                                         </td>
                                         <td style={{width: colWidth}}>
                                             <JobIcon job={jj} />
