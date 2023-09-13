@@ -112,12 +112,7 @@ class RunningJob:
                     # The working directory should be /tmp/working so that if the container wants to write to the working directory, it will not run out of space
                     '--pwd', '/tmp/working',
                     '--cleanenv', # this is important to prevent singularity from passing environment variables to the container
-
-                    # '--contain', # we don't want singularity to mount the home or tmp directories of the host
-                    # for some reason, --contain was causing problems for ks3_compiled: Could not access the MATLAB Runtime component cache
-                    # so we are only using --no-home for now
-                    
-                    '--no-home', # we don't want singularity to mount the home directory of the host
+                    '--contain', # we don't want singularity to mount the home or tmp directories of the host
                     '--nv',
                     '--env', 'PYTHONUNBUFFERED=1',
                     '--env', f'JOB_ID={self._job_id}',
