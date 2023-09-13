@@ -99,10 +99,31 @@ class App:
                 env['SPEC_OUTPUT_FILE'] = spec_fname
                 subprocess.run([executable_path], env=env)
             else:
-                # run executable in container
-                cmd = ['docker', 'run', '-it', '-v', f'{tmpdir}:{tmpdir}', '-e', f'SPEC_OUTPUT_FILE={spec_fname}', container, executable_path]
-                print(f'Running: {" ".join(cmd)}')
-                subprocess.run(cmd)
+                container_method = os.environ.get('CONTAINER_METHOD', 'docker')
+                if container_method == 'docker':
+                    # run executable in container
+                    cmd = ['docker', 'run', '-it', '-v', f'{tmpdir}:{tmpdir}', '-e', f'SPEC_OUTPUT_FILE={spec_fname}', container, executable_path]
+                    print(f'Running: {" ".join(cmd)}')
+                    subprocess.run(cmd)
+                elif container_method == 'singularity':
+                    # run executable in container
+                    cmd = [
+                        'singularity',
+                        'exec',
+                        '--cleanenv', # this is important to prevent singularity from passing environment variables to the container
+                        '--contain', # we don't want singularity to mount the home or tmp directories of the host
+                        '--env', f'SPEC_OUTPUT_FILE={spec_fname}',
+                        '--bind', f'{tmpdir}:{tmpdir}',
+                        '--nv',
+                        f'docker://{container}',
+                        executable_path
+                    ]
+                    print(f'Running: {" ".join(cmd)}')
+                    subprocess.run(
+                        cmd
+                    )
+                else:
+                    raise Exception(f'Unknown container method: {container_method}')
             with open(spec_fname, 'r') as f:
                 spec = json.load(f)
             a = App.from_spec(spec)

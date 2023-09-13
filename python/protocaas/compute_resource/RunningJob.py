@@ -1,6 +1,8 @@
 import subprocess
 import threading
 import os
+import tempfile
+import shutil
 from ..sdk.App import App
 from ..sdk._post_api_request import _post_api_request
 from ._run_job_in_aws_batch import _run_job_in_aws_batch
@@ -77,23 +79,62 @@ class RunningJob:
                 }
             )
         else:
-            cmd2 = [
-                'docker', 'run', '-it',
-                '-v', f'{working_dir}:/working',
-                '-e', 'PYTHONUNBUFFERED=1',
-                '-e', f'JOB_ID={self._job_id}',
-                '-e', f'JOB_PRIVATE_KEY={self._job_private_key}',
-                '-e', f'APP_EXECUTABLE={executable_path}',
-                container,
-                executable_path
-            ]
-            print(f'Running: {" ".join(cmd2)}')
-            self._process = subprocess.Popen(
-                cmd2,
-                cwd=working_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
+            container_method = os.environ.get('CONTAINER_METHOD', 'docker')
+            if container_method == 'docker':
+                tmpdir = working_dir + '/tmp'
+                os.makedirs(tmpdir, exist_ok=True)
+                os.makedirs(tmpdir + '/working', exist_ok=True)
+                cmd2 = [
+                    'docker', 'run', '-it',
+                    '-v', f'{tmpdir}:/tmp',
+                    '--workdir', '/tmp/working', # the working directory will be /tmp/working
+                    '-e', 'PYTHONUNBUFFERED=1',
+                    '-e', f'JOB_ID={self._job_id}',
+                    '-e', f'JOB_PRIVATE_KEY={self._job_private_key}',
+                    '-e', f'APP_EXECUTABLE={executable_path}',
+                    container,
+                    executable_path
+                ]
+                print(f'Running: {" ".join(cmd2)}')
+                self._process = subprocess.Popen(
+                    cmd2,
+                    cwd=working_dir,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+            elif container_method == 'singularity':
+                tmpdir = working_dir + '/tmp' # important to provide a /tmp directory for singularity so that it doesn't run out of disk space
+                os.makedirs(tmpdir, exist_ok=True)
+                os.makedirs(tmpdir + '/working', exist_ok=True)
+                cmd2 = [
+                    'singularity', 'exec',
+                    '--bind', f'{tmpdir}:/tmp',
+                    # The working directory should be /tmp/working so that if the container wants to write to the working directory, it will not run out of space
+                    '--pwd', '/tmp/working',
+                    '--cleanenv', # this is important to prevent singularity from passing environment variables to the container
+
+                    # '--contain', # we don't want singularity to mount the home or tmp directories of the host
+                    # for some reason, --contain was causing problems for ks3_compiled: Could not access the MATLAB Runtime component cache
+                    # so we are only using --no-home for now
+                    
+                    '--no-home', # we don't want singularity to mount the home directory of the host
+                    '--nv',
+                    '--env', 'PYTHONUNBUFFERED=1',
+                    '--env', f'JOB_ID={self._job_id}',
+                    '--env', f'JOB_PRIVATE_KEY={self._job_private_key}',
+                    '--env', f'APP_EXECUTABLE={executable_path}',
+                    f'docker://{container}',
+                    executable_path
+                ]
+                print(f'Running: {" ".join(cmd2)}')
+                self._process = subprocess.Popen(
+                    cmd2,
+                    cwd=working_dir,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+            else:
+                raise Exception(f'Unexpected container method: {container_method}')
         prefix = f'{self._job_id} {self._processor_name}: '
         t1 = threading.Thread(target=stream_output, args=(self._process.stdout, prefix))
         t1.start()
@@ -127,3 +168,13 @@ def stream_output(pipe, prefix: str):
             print(prefix + line.decode('utf-8'))
         else:
             break
+
+class TemporaryDirectory:
+    """A context manager for temporary directories"""
+    def __init__(self):
+        self._dir = None
+    def __enter__(self):
+        self._dir = tempfile.mkdtemp()
+        return self._dir
+    def __exit__(self, exc_type, exc_value, traceback):
+        shutil.rmtree(self._dir)
