@@ -13,7 +13,7 @@ const getComputeResourcesHandler = async (request: GetComputeResourcesRequest, o
     for (const cr of computeResources) {
         if (!isProtocaasComputeResource(cr)) {
             console.warn(cr)
-            throw new Error('Invalid compute resource in database (1)')
+            throw new Error('Invalid compute resource in database (1x)')
         }
     }
     return {

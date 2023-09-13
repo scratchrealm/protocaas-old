@@ -3,7 +3,8 @@ import HBoxLayout from "../../components/HBoxLayout";
 import { setUrlFile } from "../../dbInterface/dbInterface";
 import { useGithubAuth } from "../../GithubAuth/useGithubAuth";
 import useRoute from "../../useRoute";
-import { SetupWorkspacePage } from "../WorkspacePage/WorkspacePageContext";
+import ComputeResourcesPage from "../ComputeResourcePage/ComputeResourcePage";
+import { SetupWorkspacePage, useWorkspace } from "../WorkspacePage/WorkspacePageContext";
 import DandiNwbSelector from "./DandiNwbSelector/DandiNwbSelector";
 import ManualNwbSelector from "./ManualNwbSelector/ManualNwbSelector";
 import ProcessorsView from "./ProcessorsView";
@@ -131,6 +132,7 @@ type MainPanelProps = {
 
 const MainPanel: FunctionComponent<MainPanelProps> = ({width, height}) => {
     const {openTab, project, refreshFiles} = useProject()
+    const {computeResourceId} = useWorkspace()
     const {accessToken, userId} = useGithubAuth()
     const auth = useMemo(() => (accessToken ? {githubAccessToken: accessToken, userId} : {}), [accessToken, userId])
     const {route, setRoute} = useRoute()
@@ -225,7 +227,15 @@ const MainPanel: FunctionComponent<MainPanelProps> = ({width, height}) => {
                 />
             </div>
             <div style={{position: 'absolute', width, height, visibility: currentView === 'compute-resource' ? undefined : 'hidden'}}>
-                Compute resource
+                {
+                    computeResourceId && (
+                        <ComputeResourcesPage
+                            width={width}
+                            height={height}
+                            computeResourceId={computeResourceId}
+                        />
+                    )
+                }
             </div>
         </div>
     )
