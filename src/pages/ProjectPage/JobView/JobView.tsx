@@ -5,7 +5,6 @@ import { useGithubAuth } from "../../../GithubAuth/useGithubAuth";
 import { ProtocaasJob } from "../../../types/protocaas-types";
 import UserIdComponent from "../../../UserIdComponent";
 import EditJobDefinitionWindow from "../FileEditor/RunSpikeSortingWindow/EditJobDefinitionWindow";
-import { useProject } from "../ProjectPageContext";
 import OutputsTable from "./OutputsTable";
 
 type Props = {

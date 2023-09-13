@@ -1,4 +1,4 @@
-import { Add, Delete, DriveFileRenameOutline, FileCopy } from "@mui/icons-material"
+import { Add, Delete, DriveFileRenameOutline, FileCopy, Settings } from "@mui/icons-material"
 import { FunctionComponent, useCallback, useMemo, useState } from "react"
 import { useModalDialog } from "../../../ApplicationBar"
 import ModalWindow from "../../../components/ModalWindow/ModalWindow"
@@ -14,9 +14,10 @@ type FileBrowserMenuBarProps = {
     height: number
     selectedFileNames: string[]
     onResetSelection: () => void
+    onRunBatchSpikeSorting?: (filePaths: string[]) => void
 }
 
-const FileBrowserMenuBar: FunctionComponent<FileBrowserMenuBarProps> = ({ width, height, selectedFileNames, onResetSelection }) => {
+const FileBrowserMenuBar: FunctionComponent<FileBrowserMenuBarProps> = ({ width, height, selectedFileNames, onResetSelection, onRunBatchSpikeSorting }) => {
     const {deleteFile, renameFile, duplicateFile, refreshFiles, workspaceId, projectId, openTab} = useProject()
     const [operating, setOperating] = useState(false)
     const {visible: newFileWindowVisible, handleOpen: openNewFileWindow, handleClose: closeNewFileWindow} = useModalDialog()
@@ -105,6 +106,18 @@ const FileBrowserMenuBar: FunctionComponent<FileBrowserMenuBarProps> = ({ width,
                 title={selectedFileNames.length === 1? "Duplicate this file" : ''}
                 onClick={handleDuplicate}
             />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            {
+                onRunBatchSpikeSorting && (
+                    <SmallIconButton
+                        icon={<Settings />}
+                        disabled={(selectedFileNames.length === 0) || operating}
+                        title={selectedFileNames.length > 0 ? `Run spike sorting on these ${selectedFileNames.length} files` : ''}
+                        onClick={() => onRunBatchSpikeSorting(selectedFileNames)}
+                        label="Run spike sorting"
+                    />
+                )
+            }
             <ModalWindow
                 open={newFileWindowVisible}
                 onClose={closeNewFileWindow}

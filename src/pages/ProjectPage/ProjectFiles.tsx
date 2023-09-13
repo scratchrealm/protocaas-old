@@ -8,7 +8,13 @@ import { useProject } from "./ProjectPageContext";
 import JobView from "./JobView/JobView";
 import { confirm } from "../../confirm_prompt_alert";
 
-const ProjectFiles: FunctionComponent<{width: number, height: number}> = ({width, height}) => {
+type ProjectFilesProps = {
+    width: number
+    height: number
+    onRunBatchSpikeSorting?: (filePaths: string[]) => void
+}
+
+const ProjectFiles: FunctionComponent<ProjectFilesProps> = ({width, height, onRunBatchSpikeSorting}) => {
     const {files, openTab, deleteFile, closeTab, duplicateFile, renameFile, openTabs, refreshFiles} = useProject()
 
     const handleOpenFile = useCallback((fileName: string) => {
@@ -77,6 +83,7 @@ const ProjectFiles: FunctionComponent<{width: number, height: number}> = ({width
                 onDuplicateFile={handleDuplicateFile}
                 onRenameFile={handleRenameFile}
                 hideSizeColumn={false}
+                onRunBatchSpikeSorting={onRunBatchSpikeSorting}
             />
             <ProjectTabWidget
                 width={0}

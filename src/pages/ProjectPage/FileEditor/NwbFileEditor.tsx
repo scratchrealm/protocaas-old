@@ -6,7 +6,7 @@ import Splitter from "../../../components/Splitter";
 import { fetchFile } from "../../../dbInterface/dbInterface";
 import { useGithubAuth } from "../../../GithubAuth/useGithubAuth";
 import { getRemoteH5File, RemoteH5File } from "../../../RemoteH5File/RemoteH5File";
-import { ComputeResourceSpecProcessor, ProtocaasComputeResourceApp, ProtocaasFile } from "../../../types/protocaas-types";
+import { ComputeResourceSpecProcessor, ProtocaasFile } from "../../../types/protocaas-types";
 import { useWorkspace } from "../../WorkspacePage/WorkspacePageContext";
 import { AssetResponse } from "../DandiNwbSelector/types";
 import JobsWindow from "../JobsWindow/JobsWindow";
@@ -42,10 +42,11 @@ const NwbFileEditor: FunctionComponent<Props> = ({fileName, width, height}) => {
     )
 }
 
-const useNwbFile = (nwbUrl: string) => {
+export const useNwbFile = (nwbUrl: string) => {
     const [nwbFile, setNwbFile] = useState<RemoteH5File | undefined>(undefined)
     useEffect(() => {
         let canceled = false
+        if (!nwbUrl) return
         ; (async () => {
             const f = await getRemoteH5File(nwbUrl, undefined)
             if (canceled) return

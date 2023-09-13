@@ -1,5 +1,7 @@
-import { FunctionComponent, useCallback, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo, useState } from "react";
+import { useModalDialog } from "../../ApplicationBar";
 import HBoxLayout from "../../components/HBoxLayout";
+import ModalWindow from "../../components/ModalWindow/ModalWindow";
 import { setUrlFile } from "../../dbInterface/dbInterface";
 import { useGithubAuth } from "../../GithubAuth/useGithubAuth";
 import useRoute from "../../useRoute";
@@ -12,6 +14,7 @@ import ProjectFiles from "./ProjectFiles";
 import ProjectHome from "./ProjectHome";
 import ProjectJobs from "./ProjectJobs";
 import { SetupProjectPage, useProject } from "./ProjectPageContext";
+import RunBatchSpikeSortingWindow from "./RunBatchSpikeSortingWindow/RunBatchSpikeSortingWindow";
 
 type Props = {
     width: number
@@ -186,6 +189,13 @@ const MainPanel: FunctionComponent<MainPanelProps> = ({width, height}) => {
         handleCreateFiles([{fileName, url: nwbUrl, metadata}])
     }, [handleCreateFiles])
 
+    const {visible: runSpikeSortingWindowVisible, handleOpen: openRunSpikeSortingWindow, handleClose: closeRunSpikeSortingWindow} = useModalDialog()
+    const [spikeSortingFilePaths, setSpikeSortingFilePaths] = useState<string[]>([])
+    const handleRunSpikeSorting = useCallback((filePaths: string[]) => {
+        setSpikeSortingFilePaths(filePaths)
+        openRunSpikeSortingWindow()
+    }, [openRunSpikeSortingWindow])
+
     return (
         <div style={{position: 'absolute', width, height, overflow: 'hidden', background: 'white'}}>
             <div style={{position: 'absolute', width, height, visibility: currentView === 'project-home' ? undefined : 'hidden'}}>
@@ -198,6 +208,7 @@ const MainPanel: FunctionComponent<MainPanelProps> = ({width, height}) => {
                 <ProjectFiles
                     width={width}
                     height={height}
+                    onRunBatchSpikeSorting={handleRunSpikeSorting}
                 />
             </div>
             <div style={{position: 'absolute', width, height, visibility: currentView === 'project-jobs' ? undefined : 'hidden'}}>
@@ -237,6 +248,15 @@ const MainPanel: FunctionComponent<MainPanelProps> = ({width, height}) => {
                     )
                 }
             </div>
+            <ModalWindow
+                open={runSpikeSortingWindowVisible}
+                onClose={closeRunSpikeSortingWindow}
+            >
+                <RunBatchSpikeSortingWindow
+                    filePaths={spikeSortingFilePaths}
+                    onClose={closeRunSpikeSortingWindow}
+                />
+            </ModalWindow>
         </div>
     )
 }

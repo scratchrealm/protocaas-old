@@ -19,6 +19,7 @@ type Props = {
     onDuplicateFile: (path: string) => void
     onRenameFile: (path: string) => void
     hideSizeColumn?: boolean
+    onRunBatchSpikeSorting?: (filePaths: string[]) => void
 }
 
 type FileItem = {
@@ -115,7 +116,7 @@ type TreeNode = {
     file?: ProtocaasFile
 }
 
-const FileBrowser2: FunctionComponent<Props> = ({width, height, onOpenFile, files, hideSizeColumn}) => {
+const FileBrowser2: FunctionComponent<Props> = ({width, height, onOpenFile, files, hideSizeColumn, onRunBatchSpikeSorting}) => {
     const {currentTabName} = useProject()
 
     const rootNode = useMemo(() => {
@@ -272,6 +273,7 @@ const FileBrowser2: FunctionComponent<Props> = ({width, height, onOpenFile, file
                     height={menuBarHeight - vPadding * 2}
                     selectedFileNames={Array.from(selectedFileNames)}
                     onResetSelection={() => selectedFileNamesDispatch({type: 'set', values: new Set()})}
+                    onRunBatchSpikeSorting={onRunBatchSpikeSorting}
                 />
             </div>
             <div style={{position: 'absolute', width: width - hPadding * 2, height: height - menuBarHeight - vPadding * 2, top: menuBarHeight, overflowY: 'scroll', paddingLeft: hPadding, paddingRight: hPadding, paddingTop: vPadding, paddingBottom: vPadding}}>
