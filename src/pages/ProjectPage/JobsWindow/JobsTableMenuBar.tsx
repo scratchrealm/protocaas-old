@@ -1,4 +1,4 @@
-import { Delete, PlayArrow } from "@mui/icons-material"
+import { Delete, PlayArrow, Refresh } from "@mui/icons-material"
 import { FunctionComponent, useCallback, useState } from "react"
 import SmallIconButton from "../../../components/SmallIconButton"
 import { confirm } from "../../../confirm_prompt_alert"
@@ -34,6 +34,12 @@ const JobsTableMenuBar: FunctionComponent<JobsTableMenuBarProps> = ({width, heig
 
     return (
         <div>
+            <SmallIconButton
+                icon={<Refresh />}
+                disabled={operating}
+                title='Refresh'
+                onClick={refreshJobs}
+            />
             <SmallIconButton
                 icon={<Delete />}
                 disabled={(selectedJobIds.length === 0) || operating}

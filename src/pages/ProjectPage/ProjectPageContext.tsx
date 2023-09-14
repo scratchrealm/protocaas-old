@@ -1,5 +1,5 @@
 import React, { FunctionComponent, PropsWithChildren, useCallback, useEffect, useMemo } from 'react';
-import { createJob, deleteFile, deleteJob, deleteProject, duplicateFile, fetchFiles, fetchJobsForProject, fetchProject, renameFile, setProjectProperty } from '../../dbInterface/dbInterface';
+import { deleteFile, deleteJob, deleteProject, duplicateFile, fetchFiles, fetchJobsForProject, fetchProject, renameFile, setProjectProperty } from '../../dbInterface/dbInterface';
 import { useGithubAuth } from '../../GithubAuth/useGithubAuth';
 import { onPubsubMessage } from '../../pubnub/pubnub';
 import { ProtocaasFile, ProtocaasJob, ProtocaasProject } from '../../types/protocaas-types';
@@ -222,7 +222,7 @@ export const SetupProjectPage: FunctionComponent<PropsWithChildren<Props>> = ({c
 
     useEffect(() => {
         const cancel = onPubsubMessage(message => {
-            if (message.type === 'jobStatusChanged') {
+            if ((message.type === 'jobStatusChanged') || (message.type === 'newPendingJob')) {
                 if (message.projectId === projectId) {
                     refreshJobs()
                 }

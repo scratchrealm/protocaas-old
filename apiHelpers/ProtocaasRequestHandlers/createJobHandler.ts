@@ -1,5 +1,5 @@
-import { isProtocaasFile, ProtocaasJob } from "../../src/types/protocaas-types";
-import { CreateJobRequest, CreateJobResponse } from "../../src/types/ProtocaasRequest";
+import { isProtocaasFile, isProtocaasJob, ProtocaasJob } from "../../src/types/protocaas-types";
+import { CreateJobRequest, CreateJobResponse, DeleteFileRequest, DeleteJobRequest } from "../../src/types/ProtocaasRequest";
 import createRandomId from "../createRandomId";
 import { getMongoClient } from "../getMongoClient";
 import getProject from "../getProject";
@@ -7,6 +7,8 @@ import getPubnubClient from "../getPubnubClient";
 import getWorkspace from "../getWorkspace";
 import getWorkspaceRole from "../getWorkspaceRole";
 import removeIdField from "../removeIdField";
+import deleteFileHandler  from "./deleteFileHandler";
+import deleteJobHandler from "./deleteJobHandler";
 
 const createJobHandler = async (request: CreateJobRequest, o: {verifiedClientId?: string, verifiedUserId?: string}): Promise<CreateJobResponse> => {
     const userId = o.verifiedUserId
@@ -16,6 +18,8 @@ const createJobHandler = async (request: CreateJobRequest, o: {verifiedClientId?
     const workspaceRole = getWorkspaceRole(workspace, userId)
 
     const client = await getMongoClient()
+
+    const jobsCollection = client.db('protocaas').collection('jobs')
 
     if (!userId) {
         throw new Error('User must be logged in to create jobs')
@@ -79,6 +83,57 @@ const createJobHandler = async (request: CreateJobRequest, o: {verifiedClientId?
         fileName: filterOutputFileName(x.fileName),
     }))
 
+    // delete any existing output files
+    for (const outputFile of outputFiles) {
+        const existingFile = await filesCollection.findOne({
+            projectId: request.projectId,
+            fileName: outputFile.fileName
+        })
+        if (existingFile) {
+            // important to do it this way rather than deleting directly from the database
+            // because this will also delete any jobs that involve this file
+            const req: DeleteFileRequest = {
+                type: 'deleteFile',
+                timestamp: Date.now() / 1000,
+                workspaceId,
+                projectId: request.projectId,
+                fileName: outputFile.fileName
+            }
+            await deleteFileHandler(req, o)
+        }
+    }
+
+    // delete any jobs that are expected to produce the output files
+    // because maybe the output files haven't been created yet, but we still want to delete/cancel them
+    const allJobs = removeIdField(await jobsCollection.find({
+        projectId: request.projectId
+    }).toArray())
+    const outputFileNames = outputFiles.map(x => x.fileName)
+    for (const jj of allJobs) {
+        if (!isProtocaasJob(jj)) {
+            console.warn(jj)
+            throw new Error('Invalid job in database (98)')
+        }
+        let shouldDelete = false
+        for (const outputFile of jj.outputFiles) {
+            if (outputFileNames.includes(outputFile.fileName)) {
+                shouldDelete = true
+            }
+        }
+        if (shouldDelete) {
+            // Do it this way rather than deleting directly from the database
+            // because this will also delete any files that are produced by this job
+            const req: DeleteJobRequest = {
+                type: 'deleteJob',
+                timestamp: Date.now() / 1000,
+                workspaceId,
+                projectId: request.projectId,
+                jobId: jj.jobId
+            }
+            await deleteJobHandler(req, o)
+        }
+    }
+
     const job: ProtocaasJob = {
         jobId,
         jobPrivateKey,
@@ -98,7 +153,6 @@ const createJobHandler = async (request: CreateJobRequest, o: {verifiedClientId?
     if (request.batchId) {
         job.batchId = request.batchId
     }
-    const jobsCollection = client.db('protocaas').collection('jobs')
     await jobsCollection.insertOne(job)
 
     const pnClient = await getPubnubClient()
@@ -112,6 +166,7 @@ const createJobHandler = async (request: CreateJobRequest, o: {verifiedClientId?
                 jobId
             }
         })
+        
     }
 
     return {

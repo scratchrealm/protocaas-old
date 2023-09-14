@@ -48,11 +48,15 @@ const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> =
 
     const [validParameters, validParametersDispatch] = useReducer(validParametersReducer, {})
     const allParametersAreValid = useMemo(() => {
-        for (const name in validParameters) {
-            if (!validParameters[name]) return false
+        const allNames: string[] = [...processor.parameters.map(p => p.name), ...processor.inputs.map(i => i.name), ...processor.outputs.map(o => o.name)]
+        for (const name of allNames) {
+            if (!validParameters[name]) {
+                console.log('not valid', name)
+                return false
+            }
         }
         return true
-    }, [validParameters])
+    }, [processor, validParameters])
     useEffect(() => {
         setValid && setValid(allParametersAreValid)
     }, [allParametersAreValid, setValid])
@@ -66,6 +70,13 @@ const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> =
                     name={input.name}
                     description={input.help}
                     value={jobDefinition?.inputFiles.find(f => (f.name === input.name))?.fileName}
+                    setValid={valid => {
+                        validParametersDispatch({
+                            type: 'setValid',
+                            name: input.name,
+                            valid
+                        })
+                    }}
                 />
             )
         })
@@ -76,6 +87,13 @@ const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> =
                     name={output.name}
                     description={output.help}
                     value={jobDefinition?.outputFiles.find(f => (f.name === output.name))?.fileName}
+                    setValid={valid => {
+                        validParametersDispatch({
+                            type: 'setValid',
+                            name: output.name,
+                            valid
+                        })
+                    }}
                 />
             )
         })
@@ -117,9 +135,13 @@ type InputRowProps = {
     name: string
     description: string
     value?: string
+    setValid?: (valid: boolean) => void
 }
 
-const InputRow: FunctionComponent<InputRowProps> = ({name, description, value}) => {
+const InputRow: FunctionComponent<InputRowProps> = ({name, description, value, setValid}) => {
+    useEffect(() => {
+        setValid && setValid(!!value)
+    }, [value, setValid])
     return (
         <tr>
             <td>{name}</td>
@@ -133,9 +155,13 @@ type OutputRowProps = {
     name: string
     description: string
     value?: string
+    setValid?: (valid: boolean) => void
 }
 
-const OutputRow: FunctionComponent<OutputRowProps> = ({name, description, value}) => {
+const OutputRow: FunctionComponent<OutputRowProps> = ({name, description, value, setValid}) => {
+    useEffect(() => {
+        setValid && setValid(!!value)
+    }, [value, setValid])
     return (
         <tr>
             <td>{name}</td>
@@ -156,20 +182,28 @@ type ParameterRowProps = {
 
 const ParameterRow: FunctionComponent<ParameterRowProps> = ({parameter, value, nwbFile, setValue, setValid, readOnly}) => {
     const {type, name, help} = parameter
+    const [isValid, setIsValid] = useState<boolean>(false)
     return (
         <tr>
-            <td title={`${name} (${type})`}>{name}</td>
+            <td title={`${name} (${type})`}>
+                <span
+                    style={{color: isValid ? 'black' : 'red'}}
+                >{name}</span>
+            </td>
             <td>
                 {
                     readOnly ? (
-                        <span>{value}</span>
+                        value
                     ) : (
                         <EditParameterValue
                             parameter={parameter}
                             value={value}
                             nwbFile={nwbFile}
                             setValue={setValue}
-                            setValid={setValid}
+                            setValid={valid => {
+                                setIsValid(valid)
+                                setValid(valid)
+                            }}
                         />
                     )
                 }
@@ -190,9 +224,10 @@ type EditParameterValueProps = {
 const EditParameterValue: FunctionComponent<EditParameterValueProps> = ({parameter, value, nwbFile, setValue, setValid}) => {
     const {type, name} = parameter
     if (name === 'electrical_series_path') {
-        return <ElectricalSeriesPathSelector value={value} nwbFile={nwbFile} setValue={setValue} />
+        return <ElectricalSeriesPathSelector value={value} nwbFile={nwbFile} setValue={setValue} setValid={setValid} />
     }
     else if (type === 'str') {
+        setValid(true)
         return <input type="text" value={value || ''} onChange={evt => {setValue(evt.target.value)}} />
     }
     else if (type === 'int') {
@@ -202,7 +237,8 @@ const EditParameterValue: FunctionComponent<EditParameterValueProps> = ({paramet
         return <FloatEdit value={value} setValue={setValue} setValid={setValid} />
     }
     else if (type === 'bool') {
-        return <input type="checkbox" checked={value} onChange={evt => {setValue(evt.target.checked ? true : false)}} />
+        setValid(true)
+        return <input type="checkbox" checked={value || false} onChange={evt => {setValue(evt.target.checked ? true : false)}} />
     }
     else if (type === 'Enum') {
         return <div>Enum not implemented yet</div>
@@ -330,9 +366,10 @@ type ElectricalSeriesPathSelectorProps = {
     value?: string
     nwbFile?: RemoteH5File
     setValue: (value: string) => void
+    setValid?: (valid: boolean) => void
 }
 
-const ElectricalSeriesPathSelector: FunctionComponent<ElectricalSeriesPathSelectorProps> = ({value, nwbFile, setValue}) => {
+const ElectricalSeriesPathSelector: FunctionComponent<ElectricalSeriesPathSelectorProps> = ({value, nwbFile, setValue, setValid}) => {
     const electricalSeriesPaths = useElectricalSeriesPaths(nwbFile)
 
     useEffect(() => {
@@ -341,6 +378,15 @@ const ElectricalSeriesPathSelector: FunctionComponent<ElectricalSeriesPathSelect
         if (electricalSeriesPaths.length === 0) return
         setValue(electricalSeriesPaths[0])
     }, [value, electricalSeriesPaths, setValue])
+
+    useEffect(() => {
+        if (!setValid) return
+        if ((electricalSeriesPaths === undefined) || (electricalSeriesPaths.length === 0)) {
+            setValid(false)
+            return
+        }
+        setValid(!!value)
+    }, [setValid, value, electricalSeriesPaths])
 
     if (!electricalSeriesPaths) return <div>Loading...</div>
     if (electricalSeriesPaths.length === 0) return <div>No electrical series found.</div>

@@ -1,4 +1,4 @@
-import { Add, Delete, DriveFileRenameOutline, FileCopy, Settings } from "@mui/icons-material"
+import { Add, Delete, DriveFileRenameOutline, FileCopy, Refresh, Settings } from "@mui/icons-material"
 import { FunctionComponent, useCallback, useMemo, useState } from "react"
 import { useModalDialog } from "../../../ApplicationBar"
 import ModalWindow from "../../../components/ModalWindow/ModalWindow"
@@ -86,6 +86,13 @@ const FileBrowserMenuBar: FunctionComponent<FileBrowserMenuBarProps> = ({ width,
                 onClick={openNewFileWindow}
             />
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            {/* Refresh */}
+            <SmallIconButton
+                icon={<Refresh />}
+                disabled={operating}
+                title="Refresh"
+                onClick={refreshFiles}
+            />
             <SmallIconButton
                 icon={<Delete />}
                 disabled={(selectedFileNames.length === 0) || operating}
