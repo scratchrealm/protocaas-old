@@ -1,6 +1,6 @@
 const createRandomId = (numChars: number) => {
-    // lowercase letters only
-    const chars = 'abcdefghijklmnopqrstuvwxyz'
+    // lowercase letters and digits
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
     let id = ''
     for (let i = 0; i < numChars; i++) {
         id += chars[Math.floor(Math.random() * chars.length)]
