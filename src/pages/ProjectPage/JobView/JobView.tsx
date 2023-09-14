@@ -108,14 +108,23 @@ const JobView: FunctionComponent<Props> = ({ width, height, jobId }) => {
                 </tbody>
             </table>
             <hr />
-            <h3>Outputs</h3>
-            <OutputsTable job={job} />
+            <ExpandableSection title="Files" defaultExpanded={true}>
+                <EditJobDefinitionWindow
+                    processor={job.processorSpec}
+                    jobDefinition={jobDefinition}
+                    readOnly={true}
+                    show={'inputs+outputs'}
+                    fileLinks={true}
+                />
+            </ExpandableSection>
             <hr />
             <ExpandableSection title="Parameters">
                 <EditJobDefinitionWindow
                     processor={job.processorSpec}
                     jobDefinition={jobDefinition}
                     readOnly={true}
+                    show={'parameters'}
+                    fileLinks={true}
                 />
             </ExpandableSection>
             <hr />
@@ -131,10 +140,14 @@ const JobView: FunctionComponent<Props> = ({ width, height, jobId }) => {
 
 type ExpandableSectionProps = {
     title: string
+    defaultExpanded?: boolean
 }
 
-const ExpandableSection: FunctionComponent<PropsWithChildren<ExpandableSectionProps>> = ({ title, children }) => {
+const ExpandableSection: FunctionComponent<PropsWithChildren<ExpandableSectionProps>> = ({ title, children, defaultExpanded }) => {
     const [expanded, setExpanded] = useState(false)
+    useEffect(() => {
+        if (defaultExpanded) setExpanded(true)
+    }, [defaultExpanded])
     return (
         <div>
             <div style={{ cursor: 'pointer' }} onClick={() => { setExpanded(!expanded) }}>{expanded ? '▼' : '►'} {title}</div>

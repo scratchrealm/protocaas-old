@@ -1,6 +1,6 @@
 import { faCaretDown, faCaretRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { FunctionComponent, useCallback, useMemo, useReducer } from "react";
+import { FunctionComponent, useCallback, useEffect, useMemo, useReducer } from "react";
 import Hyperlink from "../../../components/Hyperlink";
 import ComputeResourceIdComponent from "../../../ComputeResourceIdComponent";
 import { timeAgoString } from "../../../timeStrings";
@@ -32,6 +32,7 @@ type RowItem = {
     batchId: string
     timestampCreated: number
     status: string
+    role: string
 }
 
 const JobsTable: FunctionComponent<Props> = ({ width, height, fileName, jobs, onJobClicked, createJobEnabled, createJobTitle }) => {
@@ -88,12 +89,26 @@ const JobsTable: FunctionComponent<Props> = ({ width, height, fileName, jobs, on
             else {
                 status = 'unknown' // should not happen
             }
+            const batchJobRoles = batchJobs.map(jj => {
+                if (jj.inputFiles.map(f => f.fileName).includes(fileName)) {
+                    return 'input'
+                }
+                else if (jj.outputFiles.map(f => f.fileName).includes(fileName)) {
+                    return 'output'
+                }
+                else {
+                    return ''
+                }
+            })
+            const role = batchJobRoles.includes('input') ? 'input' : batchJobRoles.includes('output') ? 'output' : ''
+
 
             batchRowItems.push({
                 type: 'batch',
                 batchId,
                 timestampCreated,
-                status
+                status,
+                role
             })
         }
         const isolatedJobRowItems: RowItem[] = []
@@ -124,7 +139,21 @@ const JobsTable: FunctionComponent<Props> = ({ width, height, fileName, jobs, on
             }
         }
         return allRowItems
-    }, [sortedJobs])
+    }, [sortedJobs, fileName])
+
+    useEffect(() => {
+        // default expanded batches
+        const batchIdsToExpand: string[] = []
+        for (const rowItem of rowItems) {
+            if (rowItem.type === 'batch') {
+                const jj = sortedJobs.filter(jj => jj.batchId === rowItem.batchId)
+                if (jj.length <= 2) {
+                    batchIdsToExpand.push(rowItem.batchId)
+                }
+            }
+        }
+        expandedBatchIdsDispatch({type: 'set-multiple', paths: batchIdsToExpand, selected: true})
+    }, [rowItems, sortedJobs])
 
     const getBatchCheckedStatus = useMemo(() => ((batchId: string) => {
         const batchJobs = sortedJobs.filter(jj => jj.batchId === batchId)
@@ -232,7 +261,7 @@ const JobsTable: FunctionComponent<Props> = ({ width, height, fileName, jobs, on
                                                 <Hyperlink onClick={() => onJobClicked(jj.jobId)}>
                                                     {
                                                         jj.batchId ? (
-                                                            <span>&nbsp;&nbsp;&nbsp;&nbsp;</span> // indent
+                                                            <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> // indent
                                                         ) : null
                                                     }{jj.jobId}
                                                 </Hyperlink>
@@ -286,7 +315,9 @@ const JobsTable: FunctionComponent<Props> = ({ width, height, fileName, jobs, on
                                             </td>
                                             <td>{timeAgoString(rowItem.timestampCreated)}</td>
                                             <td><ComputeResourceIdComponent computeResourceId={getComputeResourceIdForBatch(rowItem.batchId)} link={true} /></td>
-                                            <td></td>
+                                            <td>
+                                                {rowItem.role}
+                                            </td>
                                         </tr>
                                     )
                                 }

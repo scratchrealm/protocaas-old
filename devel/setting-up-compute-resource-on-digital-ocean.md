@@ -27,12 +27,6 @@ python --version
 install pip
 pip install python3-pip
 
-Install nodejs recent version
-curl -sL https://deb.nodesource.com/setup_16.x -o /tmp/nodesource_setup.sh
-sudo bash /tmp/nodesource_setup.sh
-sudo apt-get install -y nodejs
-See: https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-20-04
-
 Install singularity
 
 Download the .deb package for the appropriate version of ubuntu
@@ -50,7 +44,6 @@ git clone https://github.com/scratchrealm/protocaas
 cd protocaas
 cd python
 pip install -e .
-This should comple the nodejs code as well
 
 Create the compute-resource directory and initialize it
 cd

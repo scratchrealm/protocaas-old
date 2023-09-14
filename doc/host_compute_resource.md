@@ -5,7 +5,6 @@ Each Protocaas workspace comes equipped with a dedicated compute resource for ex
 Prerequisites
 
 * Python >= 3.9
-* NodeJS >= v18
 * Docker or (Singularity >= 3.11)
 
 Clone this repo, then
@@ -23,16 +22,6 @@ export CONTAINER_METHOD=singularity # or docker
 cd $COMPUTE_RESOURCE_DIR
 protocaas init-compute-resource-node
 # Open the provided link in a browser and log in using GitHub
-```
-
-```bash
-# If using docker, initialize the docker container
-protocaas init-docker-container
-
-# --- or ---
-
-# If using singularity, initialize the singularity container
-protocaas init-singularity-container
 ```
 
 ```bash

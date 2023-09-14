@@ -1,7 +1,10 @@
 import { FunctionComponent, useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import Hyperlink from "../../../../components/Hyperlink";
 import { ProtocaasProcessingJobDefinition, ProtocaasProcessingJobDefinitionAction } from "../../../../dbInterface/dbInterface";
 import { RemoteH5File } from "../../../../RemoteH5File/RemoteH5File";
 import { ComputeResourceSpecProcessor, ComputeResourceSpecProcessorParameter } from "../../../../types/protocaas-types";
+import useRoute from "../../../../useRoute";
+import { useProject } from "../../ProjectPageContext";
 import { useElectricalSeriesPaths } from "../NwbFileEditor";
 
 
@@ -13,6 +16,8 @@ type EditJobDefinitionWindowProps = {
     nwbFile?: RemoteH5File
     setValid?: (valid: boolean) => void
     readOnly?: boolean
+    show?: 'inputs' | 'outputs' | 'parameters' | 'all' | 'inputs+outputs'
+    fileLinks?: boolean
 }
 
 type validParametersState = {
@@ -37,7 +42,7 @@ const validParametersReducer = (state: validParametersState, action: validParame
     else return state
 }
 
-const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> = ({jobDefinition, jobDefinitionDispatch, processor, nwbFile, setValid, readOnly}) => {
+const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> = ({jobDefinition, jobDefinitionDispatch, processor, nwbFile, setValid, readOnly, show='all', fileLinks}) => {
     const setParameterValue = useCallback((name: string, value: any) => {
         jobDefinitionDispatch && jobDefinitionDispatch({
             type: 'setInputParameter',
@@ -63,63 +68,74 @@ const EditJobDefinitionWindow: FunctionComponent<EditJobDefinitionWindowProps> =
 
     const rows = useMemo(() => {
         const ret: any[] = []
-        processor.inputs.forEach(input => {
-            ret.push(
-                <InputRow
-                    key={input.name}
-                    name={input.name}
-                    description={input.help}
-                    value={jobDefinition?.inputFiles.find(f => (f.name === input.name))?.fileName}
-                    setValid={valid => {
-                        validParametersDispatch({
-                            type: 'setValid',
-                            name: input.name,
-                            valid
-                        })
-                    }}
-                />
-            )
-        })
-        processor.outputs.forEach(output => {
-            ret.push(
-                <OutputRow
-                    key={output.name}
-                    name={output.name}
-                    description={output.help}
-                    value={jobDefinition?.outputFiles.find(f => (f.name === output.name))?.fileName}
-                    setValid={valid => {
-                        validParametersDispatch({
-                            type: 'setValid',
-                            name: output.name,
-                            valid
-                        })
-                    }}
-                />
-            )
-        })
-        processor.parameters.forEach(parameter => {
-            ret.push(
-                <ParameterRow
-                    key={parameter.name}
-                    parameter={parameter}
-                    value={jobDefinition?.inputParameters.find(f => (f.name === parameter.name))?.value}
-                    nwbFile={nwbFile}
-                    setValue={value => {
-                        setParameterValue(parameter.name, value)
-                    }}
-                    setValid={valid => {
-                        validParametersDispatch({
-                            type: 'setValid',
-                            name: parameter.name,
-                            valid
-                        })
-                    }}
-                    readOnly={readOnly}
-                />
-            )
-        })
+        const showInputs = show === 'all' || show === 'inputs' || show === 'inputs+outputs'
+        const showOutputs = show === 'all' || show === 'outputs' || show === 'inputs+outputs'
+        const showParameters = show === 'all' || show === 'parameters'
+        if (showInputs) {
+            processor.inputs.forEach(input => {
+                ret.push(
+                    <InputRow
+                        key={input.name}
+                        name={input.name}
+                        description={input.help}
+                        value={jobDefinition?.inputFiles.find(f => (f.name === input.name))?.fileName}
+                        setValid={valid => {
+                            validParametersDispatch({
+                                type: 'setValid',
+                                name: input.name,
+                                valid
+                            })
+                        }}
+                        fileLinks={fileLinks}
+                    />
+                )
+            })
+        }
+        if (showOutputs) {
+            processor.outputs.forEach(output => {
+                ret.push(
+                    <OutputRow
+                        key={output.name}
+                        name={output.name}
+                        description={output.help}
+                        value={jobDefinition?.outputFiles.find(f => (f.name === output.name))?.fileName}
+                        setValid={valid => {
+                            validParametersDispatch({
+                                type: 'setValid',
+                                name: output.name,
+                                valid
+                            })
+                        }}
+                        fileLinks={fileLinks}
+                    />
+                )
+            })
+        }
+        if (showParameters) {
+            processor.parameters.forEach(parameter => {
+                ret.push(
+                    <ParameterRow
+                        key={parameter.name}
+                        parameter={parameter}
+                        value={jobDefinition?.inputParameters.find(f => (f.name === parameter.name))?.value}
+                        nwbFile={nwbFile}
+                        setValue={value => {
+                            setParameterValue(parameter.name, value)
+                        }}
+                        setValid={valid => {
+                            validParametersDispatch({
+                                type: 'setValid',
+                                name: parameter.name,
+                                valid
+                            })
+                        }}
+                        readOnly={readOnly}
+                    />
+                )
+            })
+        }
         return ret
-    }, [processor, jobDefinition, nwbFile, setParameterValue, validParametersDispatch, readOnly])
+    }, [processor, jobDefinition, nwbFile, setParameterValue, readOnly, fileLinks, show])
     return (
         <div>
             <table className="table1">
@@ -136,16 +152,37 @@ type InputRowProps = {
     description: string
     value?: string
     setValid?: (valid: boolean) => void
+    fileLinks?: boolean
 }
 
-const InputRow: FunctionComponent<InputRowProps> = ({name, description, value, setValid}) => {
+const InputRow: FunctionComponent<InputRowProps> = ({name, description, value, setValid, fileLinks}) => {
+    const {projectId, openTab} = useProject()
+    const {setRoute} = useRoute()
     useEffect(() => {
         setValid && setValid(!!value)
     }, [value, setValid])
+    const handleOpenFile = useCallback((fileName: string) => {
+        openTab(`file:${fileName}`)
+        setRoute({
+            page: 'project',
+            projectId,
+            tab: `project-files`
+        })
+    }, [openTab, setRoute, projectId])
     return (
         <tr>
             <td>{name}</td>
-            <td>{value}</td>
+            <td>{
+                fileLinks && value ? (
+                    <Hyperlink
+                        onClick={() => {
+                            handleOpenFile(value)
+                        }}
+                    >{value}</Hyperlink>                
+                ) : (
+                    value
+                )
+            }</td>
             <td>{description}</td>
         </tr>
     )
@@ -156,16 +193,37 @@ type OutputRowProps = {
     description: string
     value?: string
     setValid?: (valid: boolean) => void
+    fileLinks?: boolean
 }
 
-const OutputRow: FunctionComponent<OutputRowProps> = ({name, description, value, setValid}) => {
+const OutputRow: FunctionComponent<OutputRowProps> = ({name, description, value, setValid, fileLinks}) => {
+    const {projectId, openTab} = useProject()
+    const {setRoute} = useRoute()
     useEffect(() => {
         setValid && setValid(!!value)
     }, [value, setValid])
+    const handleOpenFile = useCallback((fileName: string) => {
+        openTab(`file:${fileName}`)
+        setRoute({
+            page: 'project',
+            projectId,
+            tab: `project-files`
+        })
+    }, [openTab, setRoute, projectId])
     return (
         <tr>
             <td>{name}</td>
-            <td>{value}</td>
+            <td>{
+                fileLinks && value ? (
+                    <Hyperlink
+                        onClick={() => {
+                            handleOpenFile(value)
+                        }}
+                    >{value}</Hyperlink>                
+                ) : (
+                    value
+                )
+            }</td>
             <td>{description}</td>
         </tr>
     )
@@ -187,7 +245,7 @@ const ParameterRow: FunctionComponent<ParameterRowProps> = ({parameter, value, n
         <tr>
             <td title={`${name} (${type})`}>
                 <span
-                    style={{color: isValid ? 'black' : 'red'}}
+                    style={{color: readOnly || isValid ? 'black' : 'red'}}
                 >{name}</span>
             </td>
             <td>
