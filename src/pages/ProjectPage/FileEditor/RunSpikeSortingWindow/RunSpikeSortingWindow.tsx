@@ -66,7 +66,7 @@ const RunSpikeSortingWindow: FunctionComponent<RunSpikeSortingWindowProps> = ({f
         if (!processor) return
         setSubmitting(true)
         try {
-            await createJob(workspaceId, projectId, jobDefinition, processor, auth)
+            await createJob({workspaceId, projectId, jobDefinition, processorSpec: processor}, auth)
             onClose()
         }
         finally {

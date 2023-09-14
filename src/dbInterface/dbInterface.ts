@@ -483,21 +483,26 @@ export const protocaasJobDefinitionReducer = (state: ProtocaasProcessingJobDefin
 }
 
 export const createJob = async (
-    workspaceId: string,
-    projectId: string,
-    jobDef: ProtocaasProcessingJobDefinition,
-    processorSpec: ComputeResourceSpecProcessor,
-    auth: Auth)
-: Promise<string> => {
+    a: {
+        workspaceId: string,
+        projectId: string,
+        jobDefinition: ProtocaasProcessingJobDefinition,
+        processorSpec: ComputeResourceSpecProcessor,
+        batchId?: string
+    },
+    auth: Auth
+) : Promise<string> => {
+    const {workspaceId, projectId, jobDefinition, processorSpec, batchId} = a
     const req: CreateJobRequest = {
         type: 'createJob',
         timestamp: Date.now() / 1000,
         workspaceId,
         projectId,
-        processorName: jobDef.processorName,
-        inputFiles: jobDef.inputFiles,
-        inputParameters: jobDef.inputParameters,
-        outputFiles: jobDef.outputFiles,
+        batchId,
+        processorName: jobDefinition.processorName,
+        inputFiles: jobDefinition.inputFiles,
+        inputParameters: jobDefinition.inputParameters,
+        outputFiles: jobDefinition.outputFiles,
         processorSpec
     }
     const resp = await postProtocaasRequest(req, {...auth})

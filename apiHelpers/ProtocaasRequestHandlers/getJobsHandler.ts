@@ -34,7 +34,7 @@ const getJobsHandler = async (request: GetJobsRequest, o: {verifiedClientId?: st
             //     jobId: job.jobId
             // })
 
-            throw new Error('Invalid job in database (0)')
+            throw new Error('Invalid job in database (0x)')
         }
     }
 

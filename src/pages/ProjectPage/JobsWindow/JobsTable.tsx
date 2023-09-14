@@ -1,14 +1,10 @@
-import { Delete } from "@mui/icons-material";
-import { FunctionComponent, useCallback, useMemo, useReducer } from "react";
+import { FunctionComponent, useMemo, useReducer } from "react";
 import Hyperlink from "../../../components/Hyperlink";
-import SmallIconButton from "../../../components/SmallIconButton";
 import ComputeResourceIdComponent from "../../../ComputeResourceIdComponent";
-import { confirm } from "../../../confirm_prompt_alert";
 import { timeAgoString } from "../../../timeStrings";
 import { ProtocaasJob } from "../../../types/protocaas-types";
 import UserIdComponent from "../../../UserIdComponent";
 import { Checkbox, selectedStringsReducer } from "../FileBrowser/FileBrowser2";
-import { useProject } from "../ProjectPageContext";
 import JobsTableMenuBar from "./JobsTableMenuBar";
 
 type Props = {
@@ -128,25 +124,6 @@ const JobIcon: FunctionComponent<{job: ProtocaasJob}> = ({job}) => {
         default:
             return <span title="Job has unknown status">⚫️</span>
     }
-}
-
-const JobRowActions: FunctionComponent<{job: ProtocaasJob}> = ({job}) => {
-    const {deleteJob} = useProject()
-    const handleDelete = useCallback(async () => {
-        const okay = await confirm('Delete this job?')
-        if (!okay) return
-        deleteJob(job.jobId)
-    }, [job, deleteJob])
-    return (
-        <span>
-            <SmallIconButton
-                onClick={handleDelete}
-                icon={<Delete />}
-                title="Delete this job"
-                fontSize={20}
-            />
-        </span>
-    )
 }
 
 export default JobsTable

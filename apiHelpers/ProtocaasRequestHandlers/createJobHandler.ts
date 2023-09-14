@@ -95,6 +95,9 @@ const createJobHandler = async (request: CreateJobRequest, o: {verifiedClientId?
         status: 'pending',
         processorSpec: request.processorSpec
     }
+    if (request.batchId) {
+        job.batchId = request.batchId
+    }
     const jobsCollection = client.db('protocaas').collection('jobs')
     await jobsCollection.insertOne(job)
 

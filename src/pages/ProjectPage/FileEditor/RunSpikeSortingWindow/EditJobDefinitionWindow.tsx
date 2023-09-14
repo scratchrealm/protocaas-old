@@ -193,7 +193,7 @@ const EditParameterValue: FunctionComponent<EditParameterValueProps> = ({paramet
         return <ElectricalSeriesPathSelector value={value} nwbFile={nwbFile} setValue={setValue} />
     }
     else if (type === 'str') {
-        return <input type="text" value={value} onChange={evt => {setValue(evt.target.value)}} />
+        return <input type="text" value={value || ''} onChange={evt => {setValue(evt.target.value)}} />
     }
     else if (type === 'int') {
         return <IntEdit value={value} setValue={setValue} setValid={setValid} />

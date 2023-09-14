@@ -100,6 +100,7 @@ const RunBatchSpikeSortingWindow: FunctionComponent<Props> = ({ filePaths, onClo
         if (!files) return
         setOperating(true)
         setOperatingMessage('Preparing...')
+        const batchId = createRandomId(8)
         for (let i = 0; i < filePaths.length; i++) {
             const filePath = filePaths[i]
             const jobDefinition2: ProtocaasProcessingJobDefinition = deepCopy(jobDefinition)
@@ -111,7 +112,13 @@ const RunBatchSpikeSortingWindow: FunctionComponent<Props> = ({ filePaths, onClo
             setOperatingMessage(`Submitting job ${filePath} (${i + 1} of ${filePaths.length})`)
             jobDefinition2.inputFiles[0].fileName = filePath
             jobDefinition2.outputFiles[0].fileName = outputFileName
-            await createJob(workspaceId, projectId, jobDefinition2, processor, auth)
+            await createJob({
+                workspaceId,
+                projectId,
+                jobDefinition: jobDefinition2,
+                processorSpec: processor,
+                batchId
+            }, auth)
         }
         setOperatingMessage(undefined)
         setOperating(false)
@@ -204,6 +211,16 @@ const SelectProcessor: FunctionComponent<SelectProcessorProps> = ({processors, o
 
 const deepCopy = (x: any) => {
     return JSON.parse(JSON.stringify(x))
+}
+
+const createRandomId = (numChars: number) => {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+    let ret = ''
+    for (let i = 0; i < numChars; i++) {
+        const j = Math.floor(Math.random() * chars.length)
+        ret += chars[j]
+    }
+    return ret
 }
 
 export default RunBatchSpikeSortingWindow

@@ -61,6 +61,7 @@ export type ProtocaasJob = {
     jobPrivateKey: string
     userId: string
     processorName: string
+    batchId?: string
     inputFiles: {
         name: string
         fileId: string
@@ -100,6 +101,7 @@ export const isProtocaasJob = (x: any): x is ProtocaasJob => {
         jobPrivateKey: isString,
         userId: isString,
         processorName: isString,
+        batchId: optional(isString),
         inputFiles: isArrayOf(y => (validateObject(y, {
             name: isString,
             fileId: isString,

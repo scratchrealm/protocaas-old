@@ -704,6 +704,7 @@ export type CreateJobRequest = {
     timestamp: number
     workspaceId: string
     projectId: string
+    batchId?: string
     processorName: string
     inputFiles: {
         name: string
@@ -726,6 +727,7 @@ export const isCreateJobRequest = (x: any): x is CreateJobRequest => {
         timestamp: isNumber,
         workspaceId: isString,
         projectId: isString,
+        batchId: optional(isString),
         processorName: isString,
         inputFiles: isArrayOf(y => (validateObject(y, {
             name: isString,
