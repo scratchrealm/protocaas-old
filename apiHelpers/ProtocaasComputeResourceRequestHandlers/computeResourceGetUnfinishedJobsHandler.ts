@@ -62,6 +62,7 @@ const computeResourceGetUnfinishedJobsHandler = async (request: ComputeResourceG
             jobId: job.jobId,
             jobPrivateKey: job.jobPrivateKey,
             processorName: job.processorName,
+            status: job.status
         }))
     }
 }

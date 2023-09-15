@@ -27,6 +27,7 @@ export type ComputeResourceGetUnfinishedJobsResponse = {
         jobId: string
         jobPrivateKey: string
         processorName: string
+        status: string
     }[]
 }
 
@@ -36,7 +37,8 @@ export const isComputeResourceGetUnfinishedJobsResponse = (x: any): x is Compute
         jobs: isArrayOf(y => validateObject(y, {
             jobId: isString,
             jobPrivateKey: isString,
-            processorName: isString
+            processorName: isString,
+            status: isString
         }))
     })
 }

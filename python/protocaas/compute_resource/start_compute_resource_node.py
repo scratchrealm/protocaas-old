@@ -82,6 +82,7 @@ class Daemon:
             if job.is_alive():
                 job.cleanup()
     def _handle_jobs(self):
+        print('--- handle_jobs 1')
         signature = sign_message({'type': 'computeResource.getUnfinishedJobs'}, self._compute_resource_id, self._compute_resource_private_key)
         req = {
             'type': 'computeResource.getUnfinishedJobs',
@@ -93,14 +94,19 @@ class Daemon:
         resp = _post_api_request(req)
         jobs = resp['jobs']
 
+        print('--- handle_jobs 2', 'num jobs:', len(jobs))
+        print(jobs)
+
         # Local jobs
         local_jobs = [job for job in jobs if self._is_local_job(job)]
         num_non_pending_local_jobs = len([job for job in local_jobs if job['status'] != 'pending'])
+        print('--- num_non_pending_local_jobs:', num_non_pending_local_jobs)
         if num_non_pending_local_jobs < max_simultaneous_local_jobs:
             pending_local_jobs = [job for job in local_jobs if job['status'] == 'pending']
             pending_local_jobs = _sort_jobs_by_timestamp_created(pending_local_jobs)
             num_to_start = min(max_simultaneous_local_jobs - num_non_pending_local_jobs, len(pending_local_jobs))
             local_jobs_to_start = pending_local_jobs[:num_to_start]
+            print('Num local jobs to start:', len(local_jobs_to_start))
             for job in local_jobs_to_start:
                 self._start_job(job)
         
@@ -122,6 +128,7 @@ class Daemon:
     def _is_aws_batch_job(self, job: dict) -> bool:
         return self._get_job_resource_type(job) == 'aws_batch'
     def _start_job(self, job: dict):
+        print('--- _start_job')
         job_id = job['jobId']
         job_private_key = job['jobPrivateKey']
         processor_name = job['processorName']
