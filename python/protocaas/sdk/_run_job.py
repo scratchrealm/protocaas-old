@@ -133,7 +133,7 @@ def _run_job(*, job_id: str, job_private_key: str, app_executable: str):
             _set_job_status(job_id=job_id, job_private_key=job_private_key, status='failed', error=error_message)
         _debug(job_id, 'test 10')
     except Exception as e:
-        _debug(job_id, 'test 11', str(err))
+        _debug(job_id, 'test 11', str(e))
         print('WARNING: problem setting final job status: ' + str(e))
         pass
     
