@@ -1,3 +1,4 @@
+from typing import List
 import os
 import yaml
 import time
@@ -10,9 +11,11 @@ from .RunningJob import RunningJob
 from ..sdk._run_job import _set_job_status
 from .PubsubClient import PubsubClient
 from .crypto_keys import sign_message
+from ..sdk.App import App
+from ._start_job import _start_job
 
 
-max_simultaneous_jobs = 2
+max_simultaneous_local_jobs = 2
 
 class Daemon:
     def __init__(self, *, dir: str):
@@ -50,27 +53,27 @@ class Daemon:
         self._pubsub_client = PubsubClient(
             pubnub_subscribe_key=pubsub_subscription['pubnubSubscribeKey'],
             pubnub_channel=pubsub_subscription['pubnubChannel'],
-            pubnub_user=pubsub_subscription['pubnubUser']
+            pubnub_user=pubsub_subscription['pubnubUser'],
+            compute_resource_id=self._compute_resource_id
         )
     def start(self):
-        timer_check_new_jobs = 0
+        timer_handle_jobs = 0
         timer_cleanup_old_working_dirs = 0
         print('Starting compute resource')
         while True:
-            self._check_for_dead_jobs()
-            num_running_jobs = len(self._running_jobs)
-            if num_running_jobs < max_simultaneous_jobs:
-                elapsed = time.time() - timer_check_new_jobs
-                need_to_check_for_new_jobs = elapsed > 60
-                messages = self._pubsub_client.take_messages()
-                for msg in messages:
-                    if msg['type'] == 'newPendingJob':
-                        need_to_check_for_new_jobs = True
-                if need_to_check_for_new_jobs:
-                    timer_check_new_jobs = time.time()
-                    self._check_for_new_jobs()
-            elapsed = time.time() - timer_cleanup_old_working_dirs
-            if elapsed > 300:
+            elapsed_handle_jobs = time.time() - timer_handle_jobs
+            need_to_handle_jobs = elapsed_handle_jobs > 60
+            messages = self._pubsub_client.take_messages()
+            for msg in messages:
+                if msg['type'] == 'newPendingJob':
+                    need_to_handle_jobs = True
+                if msg['type'] == 'jobStatusChaged':
+                    need_to_handle_jobs = True
+            if need_to_handle_jobs:
+                timer_handle_jobs = time.time()
+                self._handle_jobs()
+            elapsed_cleanup = time.time() - timer_cleanup_old_working_dirs
+            if elapsed_cleanup > 300:
                 timer_cleanup_old_working_dirs = time.time()
                 self._cleanup_old_working_dirs()
             time.sleep(0.1)
@@ -78,39 +81,69 @@ class Daemon:
         for job in self._running_jobs:
             if job.is_alive():
                 job.cleanup()
-    def _check_for_dead_jobs(self):
-        for job in self._running_jobs:
-            if not job.is_alive():
-                print(f'Removing dead job {job._job_id} {job._processor_name}')
-                self._running_jobs.remove(job)
-    def _check_for_new_jobs(self):
-        signature = sign_message({'type': 'computeResource.getPendingJobs'}, self._compute_resource_id, self._compute_resource_private_key)
+    def _handle_jobs(self):
+        signature = sign_message({'type': 'computeResource.getUnfinishedJobs'}, self._compute_resource_id, self._compute_resource_private_key)
         req = {
-            'type': 'computeResource.getPendingJobs',
+            'type': 'computeResource.getUnfinishedJobs',
             'computeResourceId': self._compute_resource_id,
             'signature': signature,
             'nodeId': self._node_id,
             'nodeName': self._node_name
         }
         resp = _post_api_request(req)
-        for job in resp['jobs']:
-            job_id = job['jobId']
-            job_private_key = job['jobPrivateKey']
-            processor_name = job['processorName']
-            app = self._find_app_with_processor(processor_name)
-            if app is not None:
-                print(f'Starting job {job_id} {processor_name}')
-                running_job = RunningJob(
-                    job_id=job_id,
-                    job_private_key=job_private_key,
-                    app=app,
-                    processor_name=processor_name
-                )
-                running_job.start()
-                self._running_jobs.append(running_job)
-            else:
-                print(f'Could not find app with processor name {processor_name}')
-                _set_job_status(job_id=job_id, job_private_key=job_private_key, status='failed', error=f'Could not find app with processor name {processor_name}')
+        jobs = resp['jobs']
+
+        # Local jobs
+        local_jobs = [job for job in jobs if self._is_local_job(job)]
+        num_non_pending_local_jobs = len([job for job in local_jobs if job['status'] != 'pending'])
+        if num_non_pending_local_jobs < max_simultaneous_local_jobs:
+            pending_local_jobs = [job for job in local_jobs if job['status'] == 'pending']
+            pending_local_jobs = _sort_jobs_by_timestamp_created(pending_local_jobs)
+            num_to_start = min(max_simultaneous_local_jobs - num_non_pending_local_jobs, len(pending_local_jobs))
+            local_jobs_to_start = pending_local_jobs[:num_to_start]
+            for job in local_jobs_to_start:
+                self._start_job(job)
+        
+        # AWS Batch jobs
+        aws_batch_jobs = [job for job in jobs if self._is_aws_batch_job(job)]
+        for job in aws_batch_jobs:
+            self._start_job(job)
+    def _get_job_resource_type(self, job: dict) -> str:
+        processor_name = job['processorName']
+        app: App = self._find_app_with_processor(processor_name)
+        if app is None:
+            return None
+        if app._aws_batch_job_queue is not None:
+            return 'aws_batch'
+        else:
+            return 'local'
+    def _is_local_job(self, job: dict) -> bool:
+        return self._get_job_resource_type(job) == 'local'
+    def _is_aws_batch_job(self, job: dict) -> bool:
+        return self._get_job_resource_type(job) == 'aws_batch'
+    def _start_job(self, job: dict):
+        job_id = job['jobId']
+        job_private_key = job['jobPrivateKey']
+        processor_name = job['processorName']
+        app = self._find_app_with_processor(processor_name)
+        if app is None:
+            msg = f'Could not find app with processor name {processor_name}'
+            print(msg)
+            _set_job_status(job_id=job_id, job_private_key=job_private_key, status='failed', error=msg)
+            return
+        try:
+            print(f'Starting job {job_id} {processor_name}')
+            _start_job(
+                job_id=job_id,
+                job_private_key=job_private_key,
+                processor_name=processor_name,
+                app=app
+            )
+        except Exception as e:
+            msg = f'Failed to start job: {str(e)}'
+            print(msg)
+            _set_job_status(job_id=job_id, job_private_key=job_private_key, status='failed', error=msg)
+
     def _find_app_with_processor(self, processor_name: str) -> App:
         for app in self._apps:
             for p in app._processors:
@@ -190,3 +223,6 @@ def get_pubsub_subscription(*, compute_resource_id: str, compute_resource_privat
     }
     resp = _post_api_request(req)
     return resp['subscription']
+
+def _sort_jobs_by_timestamp_created(jobs: List[dict]) -> List[dict]:
+    return sorted(jobs, key=lambda job: job['timestampCreated'])

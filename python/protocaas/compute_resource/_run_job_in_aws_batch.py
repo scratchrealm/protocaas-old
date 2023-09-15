@@ -11,7 +11,6 @@ def _run_job_in_aws_batch(
     job_private_key: str,
     aws_batch_job_queue: str,
     aws_batch_job_definition: str,
-    app_executable: str,
     container: str, # for verifying consistent with job definition
     command: str # for verifying consistent with job definition
 ):

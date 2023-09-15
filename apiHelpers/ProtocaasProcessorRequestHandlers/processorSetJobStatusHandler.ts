@@ -140,6 +140,7 @@ const processorSetJobStatusHandler = async (request: ProcessorSetJobStatusReques
                 type: 'jobStatusChanged',
                 workspaceId: job.workspaceId,
                 projectId: job.projectId,
+                computeResourceId: job.computeResourceId,
                 jobId: job.jobId,
                 status: newStatus
             }

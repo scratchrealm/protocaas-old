@@ -3,9 +3,9 @@ import { getMongoClient } from "../getMongoClient"
 import JSONStringifyDeterministic from "../jsonStringifyDeterministic"
 import removeIdField from "../removeIdField"
 import verifySignature from "../verifySignature"
-import { ComputeResourceGetPendingJobsRequest, ComputeResourceGetPendingJobsResponse } from "./ProtocaasComputeResourceRequest"
+import { ComputeResourceGetUnfinishedJobsRequest, ComputeResourceGetUnfinishedJobsResponse } from "./ProtocaasComputeResourceRequest"
 
-const computeResourceGetPendingJobsHandler = async (request: ComputeResourceGetPendingJobsRequest): Promise<ComputeResourceGetPendingJobsResponse> => {
+const computeResourceGetUnfinishedJobsHandler = async (request: ComputeResourceGetUnfinishedJobsRequest): Promise<ComputeResourceGetUnfinishedJobsResponse> => {
     const client = await getMongoClient()
 
     const computeResourcesCollection = client.db('protocaas').collection('computeResources')
@@ -14,16 +14,16 @@ const computeResourceGetPendingJobsHandler = async (request: ComputeResourceGetP
         console.warn(computeResource)
         throw new Error('Invalid compute resource in database (5)')
     }
-    const okay = await verifySignature(JSONStringifyDeterministic({type: 'computeResource.getPendingJobs'}), computeResource.computeResourceId, request.signature)
+    const okay = await verifySignature(JSONStringifyDeterministic({type: 'computeResource.getUnfinishedJobs'}), computeResource.computeResourceId, request.signature)
     if (!okay) {
-        throw new Error('Invalid signature for computeResource.getPendingJobs')
+        throw new Error('Invalid signature for computeResource.getUnfinishedJobs')
     }
 
     const jobsCollection = client.db('protocaas').collection('jobs')
 
     const filter: {[k: string]: any} = {}
     filter['computeResourceId'] = request.computeResourceId
-    filter['status'] = 'pending'
+    filter['status'] = {$in: ['pending', 'queued', 'starting', 'running']}
 
     const jobs = removeIdField(await jobsCollection.find(filter).toArray())
     for (const job of jobs) {
@@ -57,7 +57,7 @@ const computeResourceGetPendingJobsHandler = async (request: ComputeResourceGetP
     })
 
     return {
-        type: 'computeResource.getPendingJobs',
+        type: 'computeResource.getUnfinishedJobs',
         jobs: jobsVerified.map(job => ({
             jobId: job.jobId,
             jobPrivateKey: job.jobPrivateKey,
@@ -66,4 +66,4 @@ const computeResourceGetPendingJobsHandler = async (request: ComputeResourceGetP
     }
 }
 
-export default computeResourceGetPendingJobsHandler
+export default computeResourceGetUnfinishedJobsHandler

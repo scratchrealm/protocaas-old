@@ -5,23 +5,27 @@ from pubnub.callbacks import SubscribeCallback
 from pubnub.pubnub import PubNub
 
 class MySubscribeCallback(SubscribeCallback):
-    def __init__(self, message_queue: queue.Queue):
+    def __init__(self, message_queue: queue.Queue, compute_resource_id: str):
         self._message_queue = message_queue
+        self._compute_resource_id = compute_resource_id
     def message(self, pubnub, message):
-        self._message_queue.put(message.message)
+        msg = message.message
+        if msg.get('computeResourceId', None) == self._compute_resource_id:
+            self._message_queue.put(msg)
 
 class PubsubClient:
     def __init__(self, *,
         pubnub_subscribe_key: str,
         pubnub_channel: str,
-        pubnub_user: str
+        pubnub_user: str,
+        compute_resource_id: str
     ):
         self._message_queue = queue.Queue()
         pnconfig = PNConfiguration()
         pnconfig.subscribe_key = pubnub_subscribe_key
         pnconfig.user_id = pubnub_user
         pubnub = PubNub(pnconfig)
-        pubnub.add_listener(MySubscribeCallback(message_queue=self._message_queue))
+        pubnub.add_listener(MySubscribeCallback(message_queue=self._message_queue, compute_resource_id=compute_resource_id))
         pubnub.subscribe().channels([pubnub_channel]).execute()
     def take_messages(self) -> List[dict]:
         ret = []

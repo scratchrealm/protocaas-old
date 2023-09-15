@@ -138,6 +138,7 @@ const setJobPropertyHandler = async (request: SetJobPropertyRequest, o: {verifie
                     type: 'jobStatusChanged',
                     workspaceId: request.workspaceId,
                     projectId: request.projectId,
+                    computeResourceId: job.computeResourceId,
                     jobId: job.jobId,
                     status: request.value
                 }

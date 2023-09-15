@@ -163,6 +163,7 @@ const createJobHandler = async (request: CreateJobRequest, o: {verifiedClientId?
                 type: 'newPendingJob',
                 workspaceId,
                 projectId: request.projectId,
+                computeResourceId,
                 jobId
             }
         })

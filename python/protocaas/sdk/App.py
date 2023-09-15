@@ -34,6 +34,10 @@ class App:
         self._name = name
         self._help = help
         self._processors: List[AppProcessor] = []
+        self._executable_path: str = None
+        self._executable_container: str = None
+        self._aws_batch_job_queue: str = None
+        self._aws_batch_job_definition: str = None
     def add_processor(self, processor_func):
         P = AppProcessor.from_func(processor_func)
         self._processors.append(P)

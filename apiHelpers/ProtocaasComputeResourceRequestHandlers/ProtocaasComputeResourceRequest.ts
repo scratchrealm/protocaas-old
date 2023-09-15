@@ -1,19 +1,19 @@
 import validateObject, { isArrayOf, isBoolean, isEqualTo, isNumber, isOneOf, isString, optional } from "../../src/types/validateObject";
 import {ComputeResourceSpec, isComputeResourceSpec} from "../../src/types/protocaas-types"
 
-// computeResource.getPendingJobs
+// computeResource.getUnfinishedJobs
 
-export type ComputeResourceGetPendingJobsRequest = {
-    type: 'computeResource.getPendingJobs'
+export type ComputeResourceGetUnfinishedJobsRequest = {
+    type: 'computeResource.getUnfinishedJobs'
     computeResourceId: string
     signature: string
     nodeId: string
     nodeName: string
 }
 
-export const isComputeResourceGetPendingJobsRequest = (x: any): x is ComputeResourceGetPendingJobsRequest => {
+export const isComputeResourceGetUnfinishedJobsRequest = (x: any): x is ComputeResourceGetUnfinishedJobsRequest => {
     return validateObject(x, {
-        type: isEqualTo('computeResource.getPendingJobs'),
+        type: isEqualTo('computeResource.getUnfinishedJobs'),
         computeResourceId: isString,
         signature: isString,
         nodeId: isString,
@@ -21,8 +21,8 @@ export const isComputeResourceGetPendingJobsRequest = (x: any): x is ComputeReso
     })
 }
 
-export type ComputeResourceGetPendingJobsResponse = {
-    type: 'computeResource.getPendingJobs'
+export type ComputeResourceGetUnfinishedJobsResponse = {
+    type: 'computeResource.getUnfinishedJobs'
     jobs: {
         jobId: string
         jobPrivateKey: string
@@ -30,9 +30,9 @@ export type ComputeResourceGetPendingJobsResponse = {
     }[]
 }
 
-export const isComputeResourceGetPendingJobsResponse = (x: any): x is ComputeResourceGetPendingJobsResponse => {
+export const isComputeResourceGetUnfinishedJobsResponse = (x: any): x is ComputeResourceGetUnfinishedJobsResponse => {
     return validateObject(x, {
-        type: isEqualTo('computeResource.getPendingJobs'),
+        type: isEqualTo('computeResource.getUnfinishedJobs'),
         jobs: isArrayOf(y => validateObject(y, {
             jobId: isString,
             jobPrivateKey: isString,
@@ -152,14 +152,14 @@ export const isComputeResourceSetSpecResponse = (x: any): x is ComputeResourceSe
 //////////////////////////////////////////////////////////////////////////////
 
 export type ProtocaasComputeResourceRequest =
-    ComputeResourceGetPendingJobsRequest |
+    ComputeResourceGetUnfinishedJobsRequest |
     ComputeResourceGetAppsRequest |
     ComputeResourceGetPubsubSubscriptionRequest |
     ComputeResourceSetSpecRequest
 
 export const isProtocaasComputeResourceRequest = (x: any): x is ProtocaasComputeResourceRequest => {
     return isOneOf([
-        isComputeResourceGetPendingJobsRequest,
+        isComputeResourceGetUnfinishedJobsRequest,
         isComputeResourceGetAppsRequest,
         isComputeResourceGetPubsubSubscriptionRequest,
         isComputeResourceSetSpecRequest
@@ -167,14 +167,14 @@ export const isProtocaasComputeResourceRequest = (x: any): x is ProtocaasCompute
 }
 
 export type ProtocaasComputeResourceResponse =
-    ComputeResourceGetPendingJobsResponse |
+    ComputeResourceGetUnfinishedJobsResponse |
     ComputeResourceGetAppsResponse |
     ComputeResourceGetPubsubSubscriptionResponse |
     ComputeResourceSetSpecResponse
 
 export const isProtocaasComputeResourceResponse = (x: any): x is ProtocaasComputeResourceResponse => {
     return isOneOf([
-        isComputeResourceGetPendingJobsResponse,
+        isComputeResourceGetUnfinishedJobsResponse,
         isComputeResourceGetAppsResponse,
         isComputeResourceGetPubsubSubscriptionResponse,
         isComputeResourceSetSpecResponse
