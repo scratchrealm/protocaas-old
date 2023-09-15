@@ -1,6 +1,5 @@
 import os
 import subprocess
-import threading
 from ..sdk.App import App
 from ..sdk._post_api_request import _post_api_request
 from ._run_job_in_aws_batch import _run_job_in_aws_batch
@@ -54,8 +53,9 @@ def _start_job(*,
             [executable_path],
             cwd=working_dir,
             start_new_session=True, # This is important so it keeps running even if the compute resource is stopped
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            # Important to set output to devnull so that we don't get a broken pipe error if this parent process is closed
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
             env={
                 **os.environ,
                 'PYTHONUNBUFFERED': '1',
@@ -86,8 +86,9 @@ def _start_job(*,
                 cmd2,
                 cwd=working_dir,
                 start_new_session=True, # This is important so it keeps running even if the compute resource is stopped
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                # Important to set output to devnull so that we don't get a broken pipe error if this parent process is closed
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
             )
         elif container_method == 'singularity':
             tmpdir = working_dir + '/tmp' # important to provide a /tmp directory for singularity so that it doesn't run out of disk space
@@ -113,25 +114,30 @@ def _start_job(*,
                 cmd2,
                 cwd=working_dir,
                 start_new_session=True, # This is important so it keeps running even if the compute resource is stopped
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                # Important to set output to devnull so that we don't get a broken pipe error if this parent process is closed
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
             )
         else:
             raise Exception(f'Unexpected container method: {container_method}')
-    prefix = f'{job_id} {processor_name}: '
-    t1 = threading.Thread(target=stream_output, args=(process.stdout, prefix))
-    t1.start()
-    prefix = f'{job_id} {processor_name} ERR: '
-    t2 = threading.Thread(target=stream_output, args=(process.stderr, prefix))
-    t2.start()
+    
+    # This was the method used previously when we wanted to capture the output of the process and display it to the console
+    # However, that was problematic, because when this parent closes, we don't want a broken pipe
+    # prefix = f'{job_id} {processor_name}: '
+    # t1 = threading.Thread(target=stream_output, args=(process.stdout, prefix))
+    # t1.start()
+    # prefix = f'{job_id} {processor_name} ERR: '
+    # t2 = threading.Thread(target=stream_output, args=(process.stderr, prefix))
+    # t2.start()
 
-def stream_output(pipe, prefix: str):
-    while True:
-        try:
-            line = pipe.readline()
-        except:
-            break
-        if line:
-            print(prefix + line.decode('utf-8'))
-        else:
-            break
+# previously did this (see above)
+# def stream_output(pipe, prefix: str):
+#     while True:
+#         try:
+#             line = pipe.readline()
+#         except:
+#             break
+#         if line:
+#             print(prefix + line.decode('utf-8'))
+#         else:
+#             break
