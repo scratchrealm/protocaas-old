@@ -1,5 +1,5 @@
 import validateObject, { isArrayOf, isBoolean, isEqualTo, isNumber, isOneOf, isString, optional } from "../../src/types/validateObject";
-import {ComputeResourceSpec, isComputeResourceSpec} from "../../src/types/protocaas-types"
+import {ComputeResourceSpec, isComputeResourceSpec, isProtocaasJob, ProtocaasJob} from "../../src/types/protocaas-types"
 
 // computeResource.getUnfinishedJobs
 
@@ -23,23 +23,13 @@ export const isComputeResourceGetUnfinishedJobsRequest = (x: any): x is ComputeR
 
 export type ComputeResourceGetUnfinishedJobsResponse = {
     type: 'computeResource.getUnfinishedJobs'
-    jobs: {
-        jobId: string
-        jobPrivateKey: string
-        processorName: string
-        status: string
-    }[]
+    jobs: ProtocaasJob[]
 }
 
 export const isComputeResourceGetUnfinishedJobsResponse = (x: any): x is ComputeResourceGetUnfinishedJobsResponse => {
     return validateObject(x, {
         type: isEqualTo('computeResource.getUnfinishedJobs'),
-        jobs: isArrayOf(y => validateObject(y, {
-            jobId: isString,
-            jobPrivateKey: isString,
-            processorName: isString,
-            status: isString
-        }))
+        jobs: isArrayOf(isProtocaasJob)
     })
 }
 

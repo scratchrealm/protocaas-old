@@ -58,12 +58,7 @@ const computeResourceGetUnfinishedJobsHandler = async (request: ComputeResourceG
 
     return {
         type: 'computeResource.getUnfinishedJobs',
-        jobs: jobsVerified.map(job => ({
-            jobId: job.jobId,
-            jobPrivateKey: job.jobPrivateKey,
-            processorName: job.processorName,
-            status: job.status
-        }))
+        jobs: jobsVerified
     }
 }
 
