@@ -29,6 +29,10 @@ class Daemon:
             raise ValueError('Compute resource has not been initialized in this directory, and the environment variable COMPUTE_RESOURCE_PRIVATE_KEY is not set.')
         self._apps = _load_apps(compute_resource_id=self._compute_resource_id, compute_resource_private_key=self._compute_resource_private_key)
 
+        # important to keep track of which jobs we attempted to start
+        # so that we don't attempt multiple times in the case where starting failed
+        self._attempted_to_start_job_ids = set()
+
         print(f'Loaded apps: {", ".join([app._name for app in self._apps])}')
 
         spec_apps = []
@@ -105,6 +109,11 @@ class Daemon:
         aws_batch_jobs = [job for job in jobs if self._is_aws_batch_job(job)]
         for job in aws_batch_jobs:
             self._start_job(job)
+        
+        # SLURM jobs
+        slurm_jobs = [job for job in jobs if self._is_slurm_job(job)]
+        for job in slurm_jobs:
+            self._start_job(job)
     def _get_job_resource_type(self, job: dict) -> str:
         processor_name = job['processorName']
         app: App = self._find_app_with_processor(processor_name)
@@ -112,14 +121,21 @@ class Daemon:
             return None
         if app._aws_batch_job_queue is not None:
             return 'aws_batch'
+        elif app._slurm_opts is not None:
+            return 'slurm'
         else:
             return 'local'
     def _is_local_job(self, job: dict) -> bool:
         return self._get_job_resource_type(job) == 'local'
     def _is_aws_batch_job(self, job: dict) -> bool:
         return self._get_job_resource_type(job) == 'aws_batch'
+    def _is_slurm_job(self, job: dict) -> bool:
+        return self._get_job_resource_type(job) == 'slurm'
     def _start_job(self, job: dict):
         job_id = job['jobId']
+        if job_id in self._attempted_to_start_job_ids:
+            return # see above comment about why this is necessary
+        self._attempted_to_start_job_ids.add(job_id)
         job_private_key = job['jobPrivateKey']
         processor_name = job['processorName']
         app = self._find_app_with_processor(processor_name)
@@ -160,10 +176,15 @@ def _load_apps(*, compute_resource_id: str, compute_resource_private_key: str):
     for a in resp['apps']:
         container = a.get('container', None)
         aws_batch = a.get('awsBatch', None)
+        slurm_opts = a.get('slurmOpts', None)
         s = []
         if container is not None:
             s.append(f'container: {container}')
         if aws_batch is not None:
+            if container is None:
+                raise Exception(f'App {a["executablePath"]} has awsBatch but not container')
+            if slurm_opts is not None:
+                raise Exception(f'App {a["executablePath"]} has awsBatch but also has slurmOpts')
             aws_batch_job_queue = aws_batch.get('jobQueue', None)
             aws_batch_job_definition = aws_batch.get('jobDefinition', None)
             s.append(f'awsBatchJobQueue: {aws_batch_job_queue}')
@@ -171,12 +192,15 @@ def _load_apps(*, compute_resource_id: str, compute_resource_private_key: str):
         else:
             aws_batch_job_queue = None
             aws_batch_job_definition = None
+        if slurm_opts is not None:
+            s.append(f'slurmOpts: {slurm_opts}')
         print(f'Loading app {a["executablePath"]} | {" | ".join(s)}')
         app = App.from_executable(
             a['executablePath'],
             container=container,
             aws_batch_job_queue=aws_batch_job_queue,
-            aws_batch_job_definition=aws_batch_job_definition
+            aws_batch_job_definition=aws_batch_job_definition,
+            slurm_opts=slurm_opts
         )
         print(f'  {len(app._processors)} processors')
         ret.append(app)

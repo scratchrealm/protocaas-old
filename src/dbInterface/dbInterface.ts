@@ -374,10 +374,15 @@ export const deleteComputeResource = async (computeResourceId: string, auth: Aut
     }
 }
 
-type App = {
+export type App = {
     name: string
     executablePath: string
     container?: string
+    awsBatch?: {
+        jobQueue: string
+        jobDefinition: string
+    }
+    slurmOpts?: string
 }
 
 export const setComputeResourceApps = async (computeResourceId: string, apps: App[], auth: Auth): Promise<void> => {

@@ -3,7 +3,7 @@ import { ProtocaasComputeResource } from "../../types/protocaas-types"
 
 type Props = {
     computeResource: ProtocaasComputeResource
-    onNewApp: (name: string, executablePath: string, container: string, awsBatch?: {jobQueue: string, jobDefinition: string}) => void
+    onNewApp: (name: string, executablePath: string, container: string, awsBatch?: {jobQueue: string, jobDefinition: string}, slurmOpts?: string) => void
 }
 
 const NewAppWindow: FunctionComponent<Props> = ({computeResource, onNewApp}) => {
@@ -12,6 +12,7 @@ const NewAppWindow: FunctionComponent<Props> = ({computeResource, onNewApp}) => 
     const [newContainer, setNewContainer] = useState('')
     const [newAwsBatchJobQueue, setNewAwsBatchJobQueue] = useState('')
     const [newAwsBatchJobDefinitiion, setNewAwsBatchJobDefinition] = useState('')
+    const [newSlurmOpts, setNewSlurmOpts] = useState('')
     
     const isValidAppName = useMemo(() => ((appName: string) => {
         if (!appName) return false
@@ -23,8 +24,9 @@ const NewAppWindow: FunctionComponent<Props> = ({computeResource, onNewApp}) => 
         if (!isValidExecutablePath(newExecutablePath)) return false
         if (newAwsBatchJobQueue && !newAwsBatchJobDefinitiion) return false
         if (!newAwsBatchJobQueue && newAwsBatchJobDefinitiion) return false
+        if (newAwsBatchJobDefinitiion && newSlurmOpts) return false
         return true
-    }, [isValidAppName, newAppName, newExecutablePath, newAwsBatchJobQueue, newAwsBatchJobDefinitiion])
+    }, [isValidAppName, newAppName, newExecutablePath, newAwsBatchJobQueue, newAwsBatchJobDefinitiion, newSlurmOpts])
 
     const newBatch = useMemo(() => {
         if (newAwsBatchJobQueue && newAwsBatchJobDefinitiion) return {jobQueue: newAwsBatchJobQueue, jobDefinition: newAwsBatchJobDefinitiion}
@@ -84,6 +86,12 @@ const NewAppWindow: FunctionComponent<Props> = ({computeResource, onNewApp}) => 
                 &nbsp;
                 <input type="text" id="new-aws-batch-job-definition" value={newAwsBatchJobDefinitiion} onChange={e => setNewAwsBatchJobDefinition(e.target.value)} />
             </div>
+            {/* Input field for the slurm options */}
+            <div>
+                <label htmlFor="new-slurm-opts">Slurm options:</label>
+                &nbsp;
+                <input type="text" id="new-slurm-opts" value={newSlurmOpts} onChange={e => setNewSlurmOpts(e.target.value)} />
+            </div>
             {/* Indicator on whether the app is valid */}
             {
                 isValid ? (
@@ -100,7 +108,7 @@ const NewAppWindow: FunctionComponent<Props> = ({computeResource, onNewApp}) => 
             }
             <hr />
             {/* Button to create the app */}
-            <button disabled={!isValid} onClick={() => onNewApp(newAppName, newExecutablePath, newContainer, newBatch)}>Add app</button>
+            <button disabled={!isValid} onClick={() => onNewApp(newAppName, newExecutablePath, newContainer, newBatch, newSlurmOpts)}>Add app</button>
         </div>
     )
 }

@@ -1,6 +1,6 @@
 import { FunctionComponent, useCallback, useEffect, useMemo, useState } from "react";
 import ComputeResourceIdComponent from "../../ComputeResourceIdComponent";
-import { fetchComputeResource, fetchJobsForComputeResource, setComputeResourceApps } from "../../dbInterface/dbInterface";
+import { App, fetchComputeResource, fetchJobsForComputeResource, setComputeResourceApps } from "../../dbInterface/dbInterface";
 import { useGithubAuth } from "../../GithubAuth/useGithubAuth";
 import { timeAgoString } from "../../timeStrings";
 import { ProtocaasComputeResource, ProtocaasJob } from "../../types/protocaas-types";
@@ -52,10 +52,10 @@ const ComputeResourcesPage: FunctionComponent<Props> = ({width, height, computeR
             }) : undefined
     }, [jobs])
 
-    const handleNewApp = useCallback((name: string, executablePath: string, container: string, awsBatch?: {jobQueue: string, jobDefinition: string}) => {
+    const handleNewApp = useCallback((name: string, executablePath: string, container: string, awsBatch?: {jobQueue: string, jobDefinition: string}, slurmOpts?: string) => {
         if (!computeResource) return
         const oldApps = computeResource.apps
-        const newApps = [...oldApps.filter(a => (a.name !== name)), {name, executablePath, container, awsBatch}]
+        const newApps: App[] = [...oldApps.filter(a => (a.name !== name)), {name, executablePath, container, awsBatch, slurmOpts}]
         setComputeResourceApps(computeResource.computeResourceId, newApps, auth).then(() => {
             refreshComputeResource()
         })

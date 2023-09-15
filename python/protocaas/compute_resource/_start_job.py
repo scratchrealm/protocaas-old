@@ -26,10 +26,15 @@ def _start_job(*,
     container: str = app._executable_container
     aws_batch_job_queue: str = app._aws_batch_job_queue
     aws_batch_job_definition: str = app._aws_batch_job_definition
+    slurm_opts: str = app._slurm_opts
 
     if aws_batch_job_queue is not None:
         if aws_batch_job_definition is None:
             raise Exception(f'aws_batch_job_queue is set but aws_batch_job_definition is not set')
+        if slurm_opts:
+            raise Exception(f'aws_batch_job_queue is set but slurm_opts is also set')
+        if not container:
+            raise Exception(f'aws_batch_job_queue is set but container is not set')
         print(f'Running job in AWS Batch: {job_id} {processor_name} {aws_batch_job_queue} {aws_batch_job_definition}')
         try:
             _run_job_in_aws_batch(
@@ -43,6 +48,11 @@ def _start_job(*,
         except Exception as e:
             raise Exception(f'Error running job in AWS Batch: {e}')
         return
+    
+    if slurm_opts:
+        slurm_cmd = ['srun'] + slurm_opts.split(' ')
+    else:
+        slurm_cmd = []
 
     # Note for future: it is not necessary to use a working dir if the job is to run in a container
     working_dir = os.getcwd() + '/jobs/' + job_id
@@ -50,7 +60,7 @@ def _start_job(*,
 
     if not container:
         process = subprocess.Popen(
-            [executable_path],
+            slurm_cmd + [executable_path],
             cwd=working_dir,
             start_new_session=True, # This is important so it keeps running even if the compute resource is stopped
             # Important to set output to devnull so that we don't get a broken pipe error if this parent process is closed
@@ -70,7 +80,7 @@ def _start_job(*,
             tmpdir = working_dir + '/tmp'
             os.makedirs(tmpdir, exist_ok=True)
             os.makedirs(tmpdir + '/working', exist_ok=True)
-            cmd2 = [
+            cmd2 = slurm_cmd + [
                 'docker', 'run', '-it',
                 '-v', f'{tmpdir}:/tmp',
                 '--workdir', '/tmp/working', # the working directory will be /tmp/working
@@ -94,7 +104,7 @@ def _start_job(*,
             tmpdir = working_dir + '/tmp' # important to provide a /tmp directory for singularity so that it doesn't run out of disk space
             os.makedirs(tmpdir, exist_ok=True)
             os.makedirs(tmpdir + '/working', exist_ok=True)
-            cmd2 = [
+            cmd2 = slurm_cmd + [
                 'singularity', 'exec',
                 '--bind', f'{tmpdir}:/tmp',
                 # The working directory should be /tmp/working so that if the container wants to write to the working directory, it will not run out of space

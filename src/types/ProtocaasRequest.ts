@@ -667,6 +667,7 @@ export type SetComputeResourceAppsRequest = {
             jobQueue: string
             jobDefinition: string
         }
+        slurmOpts?: string
     }[]
 }
 
@@ -682,7 +683,8 @@ export const isSetComputeResourceAppsRequest = (x: any): x is SetComputeResource
             awsBatch: optional((z: any) => (validateObject(z, {
                 jobQueue: isString,
                 jobDefinition: isString
-            })))
+            }))),
+            slurmOpts: optional(isString)
         })))
     })
 }

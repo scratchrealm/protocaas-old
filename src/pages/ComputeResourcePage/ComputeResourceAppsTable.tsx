@@ -11,7 +11,7 @@ type Props = {
     width: number
     height: number
     computeResource: ProtocaasComputeResource
-    onNewApp: (name: string, executablePath: string, container: string, absBatch?: {jobQueue: string, jobDefinition: string}) => void
+    onNewApp: (name: string, executablePath: string, container: string, absBatch?: {jobQueue: string, jobDefinition: string}, slurmOpts?: string) => void
     onDeleteApps: (appNames: string[]) => void
 }
 
@@ -85,7 +85,7 @@ const ComputeResourceAppsTable: FunctionComponent<Props> = ({width, height, comp
             >
                 <NewAppWindow
                     computeResource={computeResource}
-                    onNewApp={(name, executablePath, container, awsBatch) => {closeNewAppWindow(); onNewApp(name, executablePath, container, awsBatch);}}
+                    onNewApp={(name, executablePath, container, awsBatch, slurmOpts) => {closeNewAppWindow(); onNewApp(name, executablePath, container, awsBatch, slurmOpts);}}
                 />
             </ModalWindow>
         </div>
