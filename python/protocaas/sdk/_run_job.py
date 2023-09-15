@@ -13,6 +13,7 @@ from ._post_api_request import _post_api_request
 # * Sets the job status to completed or failed in the database via the API
 
 def _run_job(*, job_id: str, job_private_key: str, app_executable: str):
+    _debug(job_id, 'test 1')
     _set_job_status(job_id=job_id, job_private_key=job_private_key, status='running')
 
     cmd = app_executable
@@ -49,6 +50,7 @@ def _run_job(*, job_id: str, job_private_key: str, app_executable: str):
     last_check_job_exists_time = time.time()
 
     succeeded = False
+    _debug(job_id, 'test 2')
     try:
         while True:
             try:
@@ -76,6 +78,7 @@ def _run_job(*, job_id: str, job_private_key: str, app_executable: str):
                     last_report_console_output_time = time.time()
                     console_output_changed = False
                     try:
+                        _debug(job_id, 'test 3')
                         _set_job_console_output(job_id=job_id, job_private_key=job_private_key, console_output=all_output.decode('utf-8'))
                     except Exception as e:
                         print('WARNING: problem setting console output: ' + str(e))
@@ -98,9 +101,11 @@ def _run_job(*, job_id: str, job_private_key: str, app_executable: str):
             time.sleep(5)
         succeeded = True # No exception
     except Exception as e:
+        _debug(job_id, 'test 4')
         succeeded = False
         error_message = str(e)
     finally:
+        _debug(job_id, 'test 5')
         try:
             proc.stdout.close()
             proc.stderr.close()
@@ -109,20 +114,26 @@ def _run_job(*, job_id: str, job_private_key: str, app_executable: str):
             pass
         output_reader_thread.join()
     if console_output_changed:
+        _debug(job_id, 'test 6')
         try:
             _set_job_console_output(job_id=job_id, job_private_key=job_private_key, console_output=all_output.decode('utf-8'))
         except Exception as e:
             print('WARNING: problem setting final console output: ' + str(e))
             pass
 
+    _debug(job_id, 'test 7')
     try:
         if succeeded:
+            _debug(job_id, 'test 8')
             print('Job completed')
             _set_job_status(job_id=job_id, job_private_key=job_private_key, status='completed')
         else:
+            _debug(job_id, 'test 9', error_message)
             print('Job failed: ' + error_message)
             _set_job_status(job_id=job_id, job_private_key=job_private_key, status='failed', error=error_message)
+        _debug(job_id, 'test 10')
     except Exception as e:
+        _debug(job_id, 'test 11', str(err))
         print('WARNING: problem setting final job status: ' + str(e))
         pass
     
@@ -159,3 +170,8 @@ def _set_job_console_output(*, job_id: str, job_private_key: str, console_output
         'consoleOutput': console_output
     }
     resp = _post_api_request(req)
+
+def _debug(job_id: str, msg1: str, msg2: str=''):
+    # write to /tmp/protocaas-debug.log
+    with open('/tmp/protocaas-debug.log', 'a') as f:
+        f.write(f'{job_id} {msg1} {msg2}\n')

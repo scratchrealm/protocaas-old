@@ -4,10 +4,10 @@ import yaml
 import time
 from pathlib import Path
 import shutil
+import multiprocessing
 from .init_compute_resource_node import env_var_keys
 from ..sdk.App import App
 from ..sdk._post_api_request import _post_api_request
-from .RunningJob import RunningJob
 from ..sdk._run_job import _set_job_status
 from .PubsubClient import PubsubClient
 from .crypto_keys import sign_message
@@ -47,7 +47,6 @@ class Daemon:
         }
         _post_api_request(req)
 
-        self._running_jobs: list[RunningJob] = []
         print('Getting pubsub info')
         pubsub_subscription = get_pubsub_subscription(compute_resource_id=self._compute_resource_id, compute_resource_private_key=self._compute_resource_private_key)
         self._pubsub_client = PubsubClient(
@@ -58,7 +57,13 @@ class Daemon:
         )
     def start(self):
         timer_handle_jobs = 0
-        timer_cleanup_old_working_dirs = 0
+
+        # Start cleaning up old job directories
+        # It's important to do this in a separate process
+        # because it can take a long time to delete all the files in the tmp directories (remfile is the culprit)
+        # and we don't want to block the main process from handling jobs
+        multiprocessing.Process(target=_cleanup_old_job_working_directories, args=(os.getcwd() + '/jobs',)).start()
+
         print('Starting compute resource')
         while True:
             elapsed_handle_jobs = time.time() - timer_handle_jobs
@@ -72,17 +77,8 @@ class Daemon:
             if need_to_handle_jobs:
                 timer_handle_jobs = time.time()
                 self._handle_jobs()
-            elapsed_cleanup = time.time() - timer_cleanup_old_working_dirs
-            if elapsed_cleanup > 300:
-                timer_cleanup_old_working_dirs = time.time()
-                self._cleanup_old_working_dirs()
-            time.sleep(0.1)
-    def cleanup(self):
-        for job in self._running_jobs:
-            if job.is_alive():
-                job.cleanup()
+            time.sleep(1)
     def _handle_jobs(self):
-        print('--- handle_jobs 1')
         signature = sign_message({'type': 'computeResource.getUnfinishedJobs'}, self._compute_resource_id, self._compute_resource_private_key)
         req = {
             'type': 'computeResource.getUnfinishedJobs',
@@ -94,19 +90,14 @@ class Daemon:
         resp = _post_api_request(req)
         jobs = resp['jobs']
 
-        print('--- handle_jobs 2', 'num jobs:', len(jobs))
-        print(jobs)
-
         # Local jobs
         local_jobs = [job for job in jobs if self._is_local_job(job)]
         num_non_pending_local_jobs = len([job for job in local_jobs if job['status'] != 'pending'])
-        print('--- num_non_pending_local_jobs:', num_non_pending_local_jobs)
         if num_non_pending_local_jobs < max_simultaneous_local_jobs:
             pending_local_jobs = [job for job in local_jobs if job['status'] == 'pending']
             pending_local_jobs = _sort_jobs_by_timestamp_created(pending_local_jobs)
             num_to_start = min(max_simultaneous_local_jobs - num_non_pending_local_jobs, len(pending_local_jobs))
             local_jobs_to_start = pending_local_jobs[:num_to_start]
-            print('Num local jobs to start:', len(local_jobs_to_start))
             for job in local_jobs_to_start:
                 self._start_job(job)
         
@@ -128,7 +119,6 @@ class Daemon:
     def _is_aws_batch_job(self, job: dict) -> bool:
         return self._get_job_resource_type(job) == 'aws_batch'
     def _start_job(self, job: dict):
-        print('--- _start_job')
         job_id = job['jobId']
         job_private_key = job['jobPrivateKey']
         processor_name = job['processorName']
@@ -157,17 +147,6 @@ class Daemon:
                 if p._name == processor_name:
                     return app
         return None
-    def _cleanup_old_working_dirs(self):
-        """Delete working dirs that are more than 24 hours old"""
-        jobs_dir = Path(os.getcwd()) / 'jobs'
-        if not jobs_dir.exists():
-            return
-        for job_dir in jobs_dir.iterdir():
-            if job_dir.is_dir():
-                elapsed = time.time() - job_dir.stat().st_mtime
-                if elapsed > 24 * 60 * 60:
-                    print(f'Removing old working dir {job_dir}')
-                    shutil.rmtree(job_dir)
 
 def _load_apps(*, compute_resource_id: str, compute_resource_private_key: str):
     signature = sign_message({'type': 'computeResource.getApps'}, compute_resource_id, compute_resource_private_key)
@@ -216,10 +195,7 @@ def start_compute_resource_node(dir: str):
             os.environ[k] = the_config[k]
 
     daemon = Daemon(dir=dir)
-    try:
-        daemon.start()
-    finally:
-        daemon.cleanup()
+    daemon.start()
 
 def get_pubsub_subscription(*, compute_resource_id: str, compute_resource_private_key: str) -> str:
     signature = sign_message({'type': 'computeResource.getPubsubSubscription'}, compute_resource_id, compute_resource_private_key)
@@ -233,3 +209,17 @@ def get_pubsub_subscription(*, compute_resource_id: str, compute_resource_privat
 
 def _sort_jobs_by_timestamp_created(jobs: List[dict]) -> List[dict]:
     return sorted(jobs, key=lambda job: job['timestampCreated'])
+
+def _cleanup_old_job_working_directories(dir: str):
+    """Delete working dirs that are more than 24 hours old"""
+    jobs_dir = Path(dir)
+    while True:
+        if not jobs_dir.exists():
+            continue
+        for job_dir in jobs_dir.iterdir():
+            if job_dir.is_dir():
+                elapsed = time.time() - job_dir.stat().st_mtime
+                if elapsed > 24 * 60 * 60:
+                    print(f'Removing old working dir {job_dir}')
+                    shutil.rmtree(job_dir)
+        time.sleep(60)
