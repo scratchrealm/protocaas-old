@@ -2,10 +2,10 @@ import { VercelRequest, VercelResponse } from '@vercel/node'
 import githubVerifyAccessToken from '../apiHelpers/githubVerifyAccessToken'
 import JSONStringifyDeterminsitic from '../apiHelpers/jsonStringifyDeterministic'
 import computeResourceGetAppsHandler from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/computeResourceGetAppsHandler'
-import computeResourceGetPendingJobsHandler from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/computeResourceGetPendingJobsHandler'
+import computeResourceGetUnfinishedJobsHandler from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/computeResourceGetUnfinishedJobsHandler'
 import computeResourceGetPubsubSubscriptionHandler from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/computeResourceGetPubsubSubscriptionHandler'
 import computeResourceSetSpecHandler from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/computeResourceSetSpecHandler'
-import { isComputeResourceGetAppsRequest, isComputeResourceGetPendingJobsRequest, isComputeResourceGetPubsubSubscriptionRequest, isComputeResourceSetSpecRequest, isProtocaasComputeResourceRequest, ProtocaasComputeResourceRequest, ProtocaasComputeResourceResponse } from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/ProtocaasComputeResourceRequest'
+import { isComputeResourceGetAppsRequest, isComputeResourceGetUnfinishedJobsRequest, isComputeResourceGetPubsubSubscriptionRequest, isComputeResourceSetSpecRequest, isProtocaasComputeResourceRequest, ProtocaasComputeResourceRequest, ProtocaasComputeResourceResponse } from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/ProtocaasComputeResourceRequest'
 import processorGetJobHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorGetJobHandler'
 import processorSetJobConsoleOutputHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorSetJobConsoleOutputHandler'
 import processorSetJobStatusHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorSetJobStatusHandler'
@@ -246,8 +246,8 @@ const handleComputeResourceRequest = async (request: ProtocaasComputeResourceReq
     if (isComputeResourceGetAppsRequest(request)) {
         return await computeResourceGetAppsHandler(request)
     }
-    else if (isComputeResourceGetPendingJobsRequest(request)) {
-        return await computeResourceGetPendingJobsHandler(request)
+    else if (isComputeResourceGetUnfinishedJobsRequest(request)) {
+        return await computeResourceGetUnfinishedJobsHandler(request)
     }
     else if (isComputeResourceGetPubsubSubscriptionRequest(request)) {
         return await computeResourceGetPubsubSubscriptionHandler(request)
