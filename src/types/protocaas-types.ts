@@ -190,6 +190,7 @@ export type ProtocaasComputeResourceApp = {
         jobQueue: string
         jobDefinition: string
     }
+    slurmOpts?: string
 }
 
 export type ProtocaasComputeResource = {
@@ -214,7 +215,8 @@ export const isProtocaasComputeResource = (x: any): x is ProtocaasComputeResourc
             awsBatch: optional((z: any) => validateObject(z, {
                 jobQueue: isString,
                 jobDefinition: isString
-            }))
+            })),
+            slurmOpts: optional(isString)
         }))),
         spec: optional(isComputeResourceSpec)
     })
