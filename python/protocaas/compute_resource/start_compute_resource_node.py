@@ -1,7 +1,8 @@
-from typing import List
+from typing import List, Dict
 import os
 import yaml
 import time
+import subprocess
 from pathlib import Path
 import shutil
 import multiprocessing
@@ -27,13 +28,19 @@ class Daemon:
             raise ValueError('Compute resource has not been initialized in this directory, and the environment variable COMPUTE_RESOURCE_ID is not set.')
         if self._compute_resource_private_key is None:
             raise ValueError('Compute resource has not been initialized in this directory, and the environment variable COMPUTE_RESOURCE_PRIVATE_KEY is not set.')
-        self._apps = _load_apps(compute_resource_id=self._compute_resource_id, compute_resource_private_key=self._compute_resource_private_key)
+        self._apps: List[App] = _load_apps(compute_resource_id=self._compute_resource_id, compute_resource_private_key=self._compute_resource_private_key)
 
         # important to keep track of which jobs we attempted to start
         # so that we don't attempt multiple times in the case where starting failed
         self._attempted_to_start_job_ids = set()
 
         print(f'Loaded apps: {", ".join([app._name for app in self._apps])}')
+
+        self._slurm_job_handlers_by_processor: Dict[str, SlurmJobHandler] = {}
+        for app in self._apps:
+            for processor in app._processors:
+                if app._slurm_opts is not None:
+                    self._slurm_job_handlers_by_processor[processor._name] = SlurmJobHandler(self, app._slurm_opts)
 
         spec_apps = []
         for app in self._apps:
@@ -81,6 +88,10 @@ class Daemon:
             if need_to_handle_jobs:
                 timer_handle_jobs = time.time()
                 self._handle_jobs()
+            
+            for slurm_job_handler in self._slurm_job_handlers_by_processor.values():
+                slurm_job_handler.do_work()
+
             time.sleep(1)
     def _handle_jobs(self):
         signature = sign_message({'type': 'computeResource.getUnfinishedJobs'}, self._compute_resource_id, self._compute_resource_private_key)
@@ -113,7 +124,11 @@ class Daemon:
         # SLURM jobs
         slurm_jobs = [job for job in jobs if self._is_slurm_job(job)]
         for job in slurm_jobs:
-            self._start_job(job)
+            processor_name = job['processorName']
+            if processor_name not in self._slurm_job_handlers_by_processor:
+                raise Exception(f'Unexpected: Could not find slurm job handler for processor {processor_name}')
+            self._slurm_job_handlers_by_processor[processor_name].add_job(job)
+
     def _get_job_resource_type(self, job: dict) -> str:
         processor_name = job['processorName']
         app: App = self._find_app_with_processor(processor_name)
@@ -131,10 +146,10 @@ class Daemon:
         return self._get_job_resource_type(job) == 'aws_batch'
     def _is_slurm_job(self, job: dict) -> bool:
         return self._get_job_resource_type(job) == 'slurm'
-    def _start_job(self, job: dict):
+    def _start_job(self, job: dict, run_process: bool = True, return_shell_command: bool = False):
         job_id = job['jobId']
         if job_id in self._attempted_to_start_job_ids:
-            return # see above comment about why this is necessary
+            return '' # see above comment about why this is necessary
         self._attempted_to_start_job_ids.add(job_id)
         job_private_key = job['jobPrivateKey']
         processor_name = job['processorName']
@@ -143,19 +158,22 @@ class Daemon:
             msg = f'Could not find app with processor name {processor_name}'
             print(msg)
             _set_job_status(job_id=job_id, job_private_key=job_private_key, status='failed', error=msg)
-            return
+            return ''
         try:
             print(f'Starting job {job_id} {processor_name}')
-            _start_job(
+            return _start_job(
                 job_id=job_id,
                 job_private_key=job_private_key,
                 processor_name=processor_name,
-                app=app
+                app=app,
+                run_process=run_process,
+                return_shell_command=return_shell_command
             )
         except Exception as e:
             msg = f'Failed to start job: {str(e)}'
             print(msg)
             _set_job_status(job_id=job_id, job_private_key=job_private_key, status='failed', error=msg)
+            return ''
 
     def _find_app_with_processor(self, processor_name: str) -> App:
         for app in self._apps:
@@ -247,3 +265,59 @@ def _cleanup_old_job_working_directories(dir: str):
                     print(f'Removing old working dir {job_dir}')
                     shutil.rmtree(job_dir)
         time.sleep(60)
+
+class SlurmJobHandler:
+    def __init__(self, daemon: Daemon, slurm_opts: str):
+        self._daemon = daemon
+        self._slurm_opts = slurm_opts
+        self._jobs = []
+        self._job_ids = set()
+        self._time_of_last_job_added = 0
+    def add_job(self, job: dict):
+        job_id = job['jobId']
+        if job_id not in self._job_ids:
+            self._jobs.append(job)
+            self._job_ids.add(job_id)
+            self._time_of_last_job_added = time.time()
+    def do_work(self):
+        if len(self._jobs) == 0:
+            return
+        elapsed_since_last_job_added = time.time() - self._time_of_last_job_added
+        # wait a bit before starting jobs because maybe more will be added, and we want to start them all at once
+        if elapsed_since_last_job_added < 5:
+            return
+        max_jobs_in_batch = 20
+        num_jobs_to_start = min(max_jobs_in_batch, len(self._jobs))
+        jobs_to_start = self._jobs[:num_jobs_to_start]
+        self._jobs = self._jobs[num_jobs_to_start:]
+        for job in jobs_to_start:
+            self._job_ids.remove(job['jobId'])
+        self._run_slurm_batch(jobs_to_start)
+    def _run_slurm_batch(self, jobs: List[dict]):
+        if not os.path.exists('slurm_scripts'):
+            os.mkdir('slurm_scripts')
+        random_str = os.urandom(16).hex()
+        slurm_script_fname = f'slurm_scripts/slurm_batch_{random_str}.sh'
+        with open(slurm_script_fname, 'w') as f:
+            f.write('#!/bin/bash\n')
+            f.write('\n')
+            f.write('set -e\n')
+            f.write('\n')
+            for ii, job in enumerate(jobs):
+                cmd = self._daemon._start_job(job, run_process=False, return_shell_command=True)
+                if cmd:
+                    f.write(f'if [ "$SLURM_PROCID" == "{ii}" ]; then\n')
+                    f.write(f'    {cmd}\n')
+                    f.write('fi\n')
+                    f.write('\n')
+            f.write('\n')
+        # run the slurm script with srun
+        cmd = f'srun -n {len(jobs)} {self._slurm_opts} bash {slurm_script_fname}'
+        print(f'Running slurm batch: {cmd}')
+        subprocess.Popen(
+            cmd.split(' '),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True
+        )
+        
