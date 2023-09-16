@@ -50,6 +50,7 @@ const ComputeResourceAppsTable: FunctionComponent<Props> = ({width, height, comp
                             <th>Executable path</th>
                             <th>Container</th>
                             <th>AWS Batch</th>
+                            <th>Slurm</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -72,6 +73,9 @@ const ComputeResourceAppsTable: FunctionComponent<Props> = ({width, height, comp
                                     </td>
                                     <td>
                                         {app.awsBatch ? `Job queue: ${app.awsBatch.jobQueue} | Job definition: ${app.awsBatch.jobDefinition}` : ''}
+                                    </td>
+                                    <td>
+                                        {app.slurmOpts || ''}
                                     </td>
                                 </tr>
                             ))
