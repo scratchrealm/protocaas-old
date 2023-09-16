@@ -1,4 +1,4 @@
-import { isProtocaasProject, isProtocaasFile, isProtocaasComputeResource, isProtocaasJob, isProtocaasWorkspace, ProtocaasProject, ProtocaasFile, ProtocaasComputeResource, ProtocaasJob, ProtocaasWorkspace, ComputeResourceSpec, isComputeResourceSpec, ComputeResourceSpecProcessor, isComputeResourceSpecProcessor } from "./protocaas-types"
+import { isProtocaasProject, isProtocaasFile, isProtocaasComputeResource, isProtocaasJob, isProtocaasWorkspace, ProtocaasProject, ProtocaasFile, ProtocaasComputeResource, ProtocaasJob, ProtocaasWorkspace, ComputeResourceSpec, isComputeResourceSpec, ComputeResourceSpecProcessor, isComputeResourceSpecProcessor, ComputeResourceAwsBatchOpts, ComputeResourceSlurmOpts, isComputeResourceAwsBatchOpts, isComputeResourceSlurmOpts } from "./protocaas-types"
 import validateObject, { isArrayOf, isBoolean, isEqualTo, isNumber, isOneOf, isString, optional } from "./validateObject"
 
 // getWorkspaces
@@ -663,11 +663,8 @@ export type SetComputeResourceAppsRequest = {
         name: string
         executablePath: string
         container?: string
-        awsBatch?: {
-            jobQueue: string
-            jobDefinition: string
-        }
-        slurmOpts?: string
+        awsBatch?: ComputeResourceAwsBatchOpts
+        slurm?: ComputeResourceSlurmOpts
     }[]
 }
 
@@ -680,11 +677,8 @@ export const isSetComputeResourceAppsRequest = (x: any): x is SetComputeResource
             name: isString,
             executablePath: isString,
             container: optional(isString),
-            awsBatch: optional((z: any) => (validateObject(z, {
-                jobQueue: isString,
-                jobDefinition: isString
-            }))),
-            slurmOpts: optional(isString)
+            awsBatch: optional(isComputeResourceAwsBatchOpts),
+            slurm: optional(isComputeResourceSlurmOpts)
         })))
     })
 }

@@ -1,5 +1,5 @@
 import { CreateProjectRequest, CreateJobRequest, CreateWorkspaceRequest, DeleteFileRequest, DeleteProjectRequest, DeleteComputeResourceRequest, DeleteJobRequest, DeleteWorkspaceRequest, GetProjectsRequest, GetFileRequest, GetFilesRequest, GetProjectRequest, GetComputeResourcesRequest, GetDataBlobRequest, GetJobRequest, GetJobsRequest, GetWorkspaceRequest, GetWorkspacesRequest, RegisterComputeResourceRequest, SetFileRequest, SetProjectPropertyRequest, SetWorkspacePropertyRequest, SetWorkspaceUsersRequest, DuplicateFileRequest, RenameFileRequest, GetComputeResourceRequest, SetComputeResourceAppsRequest } from "../types/ProtocaasRequest";
-import { ProtocaasProject, ProtocaasFile, ProtocaasComputeResource, ProtocaasJob, ProtocaasWorkspace, ComputeResourceSpecProcessor } from "../types/protocaas-types";
+import { ProtocaasProject, ProtocaasFile, ProtocaasComputeResource, ProtocaasJob, ProtocaasWorkspace, ComputeResourceSpecProcessor, ComputeResourceAwsBatchOpts, ComputeResourceSlurmOpts } from "../types/protocaas-types";
 import postProtocaasRequest from "./postProtocaasRequest";
 
 export const fetchWorkspaces = async (auth: Auth): Promise<ProtocaasWorkspace[]> => {
@@ -378,11 +378,8 @@ export type App = {
     name: string
     executablePath: string
     container?: string
-    awsBatch?: {
-        jobQueue: string
-        jobDefinition: string
-    }
-    slurmOpts?: string
+    awsBatch?: ComputeResourceAwsBatchOpts
+    slurm?: ComputeResourceSlurmOpts
 }
 
 export const setComputeResourceApps = async (computeResourceId: string, apps: App[], auth: Auth): Promise<void> => {

@@ -193,25 +193,37 @@ def _load_apps(*, compute_resource_id: str, compute_resource_private_key: str):
     ret = []
     for a in resp['apps']:
         container = a.get('container', None)
-        aws_batch = a.get('awsBatch', None)
-        slurm_opts = a.get('slurmOpts', None)
+        aws_batch_opts: dict = a.get('awsBatch', None)
+        slurm_opts: dict = a.get('slurm', None)
         s = []
         if container is not None:
             s.append(f'container: {container}')
-        if aws_batch is not None:
+        if aws_batch_opts is not None:
             if container is None:
                 raise Exception(f'App {a["executablePath"]} has awsBatch but not container')
             if slurm_opts is not None:
-                raise Exception(f'App {a["executablePath"]} has awsBatch but also has slurmOpts')
-            aws_batch_job_queue = aws_batch.get('jobQueue', None)
-            aws_batch_job_definition = aws_batch.get('jobDefinition', None)
+                raise Exception(f'App {a["executablePath"]} has awsBatch opts but also has slurm opts')
+            aws_batch_job_queue = aws_batch_opts.get('jobQueue', None)
+            aws_batch_job_definition = aws_batch_opts.get('jobDefinition', None)
             s.append(f'awsBatchJobQueue: {aws_batch_job_queue}')
             s.append(f'awsBatchJobDefinition: {aws_batch_job_definition}')
         else:
             aws_batch_job_queue = None
             aws_batch_job_definition = None
         if slurm_opts is not None:
-            s.append(f'slurmOpts: {slurm_opts}')
+            slurm_cpus_per_task = slurm_opts.get('cpusPerTask', None)
+            slurm_partition = slurm_opts.get('partition', None)
+            slurm_time = slurm_opts.get('time', None)
+            slurm_other_opts = slurm_opts.get('otherOpts', None)
+            s.append(f'slurmCpusPerTask: {slurm_cpus_per_task}')
+            s.append(f'slurmPartition: {slurm_partition}')
+            s.append(f'slurmTime: {slurm_time}')
+            s.append(f'slurmOtherOpts: {slurm_other_opts}')
+        else:
+            slurm_cpus_per_task = None
+            slurm_partition = None
+            slurm_time = None
+            slurm_other_opts = None
         print(f'Loading app {a["executablePath"]} | {" | ".join(s)}')
         app = App.from_executable(
             a['executablePath'],
@@ -267,7 +279,7 @@ def _cleanup_old_job_working_directories(dir: str):
         time.sleep(60)
 
 class SlurmJobHandler:
-    def __init__(self, daemon: Daemon, slurm_opts: str):
+    def __init__(self, daemon: Daemon, slurm_opts: dict):
         self._daemon = daemon
         self._slurm_opts = slurm_opts
         self._jobs = []
@@ -312,7 +324,21 @@ class SlurmJobHandler:
                     f.write('\n')
             f.write('\n')
         # run the slurm script with srun
-        cmd = f'srun -n {len(jobs)} {self._slurm_opts} bash {slurm_script_fname}'
+        slurm_cpus_per_task = self._slurm_opts.get('cpusPerTask', None)
+        slurm_partition = self._slurm_opts.get('partition', None)
+        slurm_time = self._slurm_opts.get('time', None)
+        slurm_other_opts = self._slurm_opts.get('otherOpts', None)
+        oo = []
+        if slurm_cpus_per_task is not None:
+            oo.append(f'--cpus-per-task={slurm_cpus_per_task}')
+        if slurm_partition is not None:
+            oo.append(f'--partition={slurm_partition}')
+        if slurm_time is not None:
+            oo.append(f'--time={slurm_time}')
+        if slurm_other_opts is not None:
+            oo.append(slurm_other_opts.split(' '))
+        slurm_opts_str = ' '.join(oo)
+        cmd = f'srun -n {len(jobs)} {slurm_opts_str} bash {slurm_script_fname}'
         print(f'Running slurm batch: {cmd}')
         subprocess.Popen(
             cmd.split(' '),
@@ -320,4 +346,3 @@ class SlurmJobHandler:
             stderr=subprocess.DEVNULL,
             start_new_session=True
         )
-        

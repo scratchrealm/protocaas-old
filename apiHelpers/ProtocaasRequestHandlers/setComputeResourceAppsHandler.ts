@@ -1,5 +1,5 @@
-import { DeleteComputeResourceRequest, DeleteComputeResourceResponse, SetComputeResourceAppsRequest, SetComputeResourceAppsResponse } from "../../src/types/ProtocaasRequest";
 import { isProtocaasComputeResource } from "../../src/types/protocaas-types";
+import { SetComputeResourceAppsRequest, SetComputeResourceAppsResponse } from "../../src/types/ProtocaasRequest";
 import { getMongoClient } from "../getMongoClient";
 import removeIdField from "../removeIdField";
 

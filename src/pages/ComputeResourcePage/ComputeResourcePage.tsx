@@ -3,7 +3,7 @@ import ComputeResourceIdComponent from "../../ComputeResourceIdComponent";
 import { App, fetchComputeResource, fetchJobsForComputeResource, setComputeResourceApps } from "../../dbInterface/dbInterface";
 import { useGithubAuth } from "../../GithubAuth/useGithubAuth";
 import { timeAgoString } from "../../timeStrings";
-import { ProtocaasComputeResource, ProtocaasJob } from "../../types/protocaas-types";
+import { ComputeResourceAwsBatchOpts, ComputeResourceSlurmOpts, ProtocaasComputeResource, ProtocaasJob } from "../../types/protocaas-types";
 import UserIdComponent from "../../UserIdComponent";
 import JobsTable from "../ProjectPage/JobsWindow/JobsTable";
 import ComputeResourceAppsTable from "./ComputeResourceAppsTable";
@@ -52,10 +52,10 @@ const ComputeResourcesPage: FunctionComponent<Props> = ({width, height, computeR
             }) : undefined
     }, [jobs])
 
-    const handleNewApp = useCallback((name: string, executablePath: string, container: string, awsBatch?: {jobQueue: string, jobDefinition: string}, slurmOpts?: string) => {
+    const handleNewApp = useCallback((name: string, executablePath: string, container: string, awsBatch?: ComputeResourceAwsBatchOpts, slurm?: ComputeResourceSlurmOpts) => {
         if (!computeResource) return
         const oldApps = computeResource.apps
-        const newApps: App[] = [...oldApps.filter(a => (a.name !== name)), {name, executablePath, container, awsBatch, slurmOpts}]
+        const newApps: App[] = [...oldApps.filter(a => (a.name !== name)), {name, executablePath, container, awsBatch, slurm}]
         setComputeResourceApps(computeResource.computeResourceId, newApps, auth).then(() => {
             refreshComputeResource()
         })

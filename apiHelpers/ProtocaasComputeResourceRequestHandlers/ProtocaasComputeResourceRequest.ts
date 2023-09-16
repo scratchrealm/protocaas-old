@@ -1,5 +1,5 @@
 import validateObject, { isArrayOf, isBoolean, isEqualTo, isNumber, isOneOf, isString, optional } from "../../src/types/validateObject";
-import {ComputeResourceSpec, isComputeResourceSpec, isProtocaasJob, ProtocaasJob} from "../../src/types/protocaas-types"
+import {ComputeResourceAwsBatchOpts, ComputeResourceSlurmOpts, ComputeResourceSpec, isComputeResourceAwsBatchOpts, isComputeResourceSlurmOpts, isComputeResourceSpec, isProtocaasJob, ProtocaasJob} from "../../src/types/protocaas-types"
 
 // computeResource.getUnfinishedJobs
 
@@ -55,10 +55,8 @@ export type ComputeResourceGetAppsResponse = {
         name: string
         executablePath: string
         container?: string
-        awsBatch?: {
-            jobQueue: string
-            jobDefinition: string
-        }
+        awsBatch?: ComputeResourceAwsBatchOpts
+        slurm?: ComputeResourceSlurmOpts
     }[]
 }
 
@@ -69,10 +67,8 @@ export const isComputeResourceGetAppsResponse = (x: any): x is ComputeResourceGe
             name: isString,
             executablePath: isString,
             container: optional(isString),
-            awsBatch: optional((z: any) => validateObject(z, {
-                jobQueue: isString,
-                jobDefinition: isString
-            }))
+            awsBatch: optional(isComputeResourceAwsBatchOpts),
+            slurm: optional(isComputeResourceSlurmOpts)
         }))
     })
 }

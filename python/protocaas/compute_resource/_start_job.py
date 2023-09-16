@@ -42,7 +42,7 @@ def _start_job(*,
     container: str = app._executable_container
     aws_batch_job_queue: str = app._aws_batch_job_queue
     aws_batch_job_definition: str = app._aws_batch_job_definition
-    slurm_opts: str = app._slurm_opts
+    slurm_opts: dict = app._slurm_opts
 
     if slurm_opts is not None:
         if run_process:

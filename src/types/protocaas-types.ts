@@ -182,15 +182,40 @@ export const isProtocaasDataBlob = (x: any): x is ProtocaasDataBlob => {
     })
 }
 
+export type ComputeResourceAwsBatchOpts = {
+    jobQueue: string
+    jobDefinition: string
+}
+
+export const isComputeResourceAwsBatchOpts = (x: any): x is ComputeResourceAwsBatchOpts => {
+    return validateObject(x, {
+        jobQueue: isString,
+        jobDefinition: isString
+    })
+}
+
+export type ComputeResourceSlurmOpts = {
+    partition?: string
+    time?: string
+    cpusPerTask?: number
+    otherOpts?: string
+}
+
+export const isComputeResourceSlurmOpts = (x: any): x is ComputeResourceSlurmOpts => {
+    return validateObject(x, {
+        partition: optional(isString),
+        time: optional(isString),
+        cpusPerTask: optional(isNumber),
+        otherOpts: optional(isString)
+    })
+}
+
 export type ProtocaasComputeResourceApp = {
     name: string
     executablePath: string
     container?: string
-    awsBatch?: {
-        jobQueue: string
-        jobDefinition: string
-    }
-    slurmOpts?: string
+    awsBatch?: ComputeResourceAwsBatchOpts
+    slurm?: ComputeResourceSlurmOpts
 }
 
 export type ProtocaasComputeResource = {
@@ -212,11 +237,8 @@ export const isProtocaasComputeResource = (x: any): x is ProtocaasComputeResourc
             name: isString,
             executablePath: isString,
             container: optional(isString),
-            awsBatch: optional((z: any) => validateObject(z, {
-                jobQueue: isString,
-                jobDefinition: isString
-            })),
-            slurmOpts: optional(isString)
+            awsBatch: optional(isComputeResourceAwsBatchOpts),
+            slurm: optional(isComputeResourceSlurmOpts)
         }))),
         spec: optional(isComputeResourceSpec)
     })

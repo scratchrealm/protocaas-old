@@ -38,7 +38,7 @@ class App:
         self._executable_container: str = None
         self._aws_batch_job_queue: str = None
         self._aws_batch_job_definition: str = None
-        self._slurm_opts: str = None
+        self._slurm_opts: dict = None
     def add_processor(self, processor_func):
         P = AppProcessor.from_func(processor_func)
         self._processors.append(P)
@@ -95,7 +95,7 @@ class App:
             app._processors.append(processor)
         return app
     @staticmethod
-    def from_executable(executable_path: str, container: str=None, aws_batch_job_queue: str=None, aws_batch_job_definition: str=None, slurm_opts: str=None):
+    def from_executable(executable_path: str, container: str=None, aws_batch_job_queue: str=None, aws_batch_job_definition: str=None, slurm_opts: dict=None):
         with TemporaryDirectory() as tmpdir:
             spec_fname = os.path.join(tmpdir, 'spec.json')
             if not container:

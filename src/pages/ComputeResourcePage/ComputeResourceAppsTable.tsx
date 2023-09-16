@@ -2,7 +2,7 @@ import { FunctionComponent, useCallback, useReducer } from "react"
 import { useModalDialog } from "../../ApplicationBar"
 import Hyperlink from "../../components/Hyperlink"
 import ModalWindow from "../../components/ModalWindow/ModalWindow"
-import { ProtocaasComputeResource } from "../../types/protocaas-types"
+import { ComputeResourceAwsBatchOpts, ComputeResourceSlurmOpts, ProtocaasComputeResource } from "../../types/protocaas-types"
 import { Checkbox, selectedStringsReducer } from "../ProjectPage/FileBrowser/FileBrowser2"
 import ComputeResourceAppsTableMenuBar from "./ComputeResourceAppsTableMenuBar"
 import NewAppWindow from "./NewAppWindow"
@@ -11,7 +11,7 @@ type Props = {
     width: number
     height: number
     computeResource: ProtocaasComputeResource
-    onNewApp: (name: string, executablePath: string, container: string, absBatch?: {jobQueue: string, jobDefinition: string}, slurmOpts?: string) => void
+    onNewApp: (name: string, executablePath: string, container: string, absBatch?: ComputeResourceAwsBatchOpts, slurm?: ComputeResourceSlurmOpts) => void
     onDeleteApps: (appNames: string[]) => void
 }
 
@@ -75,7 +75,17 @@ const ComputeResourceAppsTable: FunctionComponent<Props> = ({width, height, comp
                                         {app.awsBatch ? `Job queue: ${app.awsBatch.jobQueue} | Job definition: ${app.awsBatch.jobDefinition}` : ''}
                                     </td>
                                     <td>
-                                        {app.slurmOpts || ''}
+                                        {app.slurm ? (
+                                            <span>
+                                                <span>{app.slurm.cpusPerTask ? `CPUs per task: ${app.slurm.cpusPerTask}` : ''}</span>
+                                                &nbsp;
+                                                <span>{app.slurm.partition ? `Partition: ${app.slurm.partition}` : ''}</span>
+                                                &nbsp;
+                                                <span>{app.slurm.time ? `Time: ${app.slurm.time}` : ''}</span>
+                                                &nbsp;
+                                                <span>{app.slurm.otherOpts ? `Other options: ${app.slurm.otherOpts}` : ''}</span>
+                                            </span>
+                                        ) : ''}
                                     </td>
                                 </tr>
                             ))
