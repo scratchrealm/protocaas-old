@@ -108,6 +108,7 @@ const ComputeResourcesPage: FunctionComponent<Props> = ({width, height, computeR
                 height={appsTableHeight}
                 computeResource={computeResource}
                 onNewApp={handleNewApp}
+                onEditApp={handleNewApp}
                 onDeleteApps={handleDeleteApps}
             />}
             <hr />

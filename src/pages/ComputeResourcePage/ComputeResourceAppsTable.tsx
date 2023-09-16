@@ -1,4 +1,4 @@
-import { FunctionComponent, useCallback, useReducer } from "react"
+import { FunctionComponent, useCallback, useMemo, useReducer } from "react"
 import { useModalDialog } from "../../ApplicationBar"
 import Hyperlink from "../../components/Hyperlink"
 import ModalWindow from "../../components/ModalWindow/ModalWindow"
@@ -12,6 +12,7 @@ type Props = {
     height: number
     computeResource: ProtocaasComputeResource
     onNewApp: (name: string, executablePath: string, container: string, absBatch?: ComputeResourceAwsBatchOpts, slurm?: ComputeResourceSlurmOpts) => void
+    onEditApp: (name: string, executablePath: string, container: string, absBatch?: ComputeResourceAwsBatchOpts, slurm?: ComputeResourceSlurmOpts) => void
     onDeleteApps: (appNames: string[]) => void
 }
 
@@ -19,16 +20,23 @@ const menuBarHeight = 30
 const hPadding = 20
 const vPadding = 5
 
-const ComputeResourceAppsTable: FunctionComponent<Props> = ({width, height, computeResource, onNewApp, onDeleteApps}) => {
+const ComputeResourceAppsTable: FunctionComponent<Props> = ({width, height, computeResource, onNewApp, onEditApp, onDeleteApps}) => {
     const [selectedAppNames, selectedAppNamesDispatch] = useReducer(selectedStringsReducer, new Set<string>())
 
     const {visible: newAppWindowVisible, handleOpen: openNewAppWindow, handleClose: closeNewAppWindow} = useModalDialog()
+    const {visible: editAppWindowVisible, handleOpen: openEditAppWindow, handleClose: closeEditAppWindow} = useModalDialog()
 
     const onAppClicked = useCallback((appName: string) => {
         // TODO
     }, [])
 
     const colWidth = 15
+
+    const selectedAppForEditing = useMemo(() => {
+        if (selectedAppNames.size !== 1) return undefined
+        const appName = selectedAppNames.values().next().value
+        return computeResource.apps.find(a => (a.name === appName))
+    }, [selectedAppNames, computeResource])
 
     return (
         <div style={{position: 'relative', width, height}}>
@@ -39,6 +47,7 @@ const ComputeResourceAppsTable: FunctionComponent<Props> = ({width, height, comp
                     selectedAppNames={Array.from(selectedAppNames)}
                     onAddApp={openNewAppWindow}
                     onDeleteApps={onDeleteApps}
+                    onEditApp={openEditAppWindow}
                 />
             </div>
             <div style={{position: 'absolute', width: width - hPadding * 2, height: height - menuBarHeight - vPadding * 2, top: menuBarHeight, overflowY: 'scroll', paddingLeft: hPadding, paddingRight: hPadding, paddingTop: vPadding, paddingBottom: vPadding}}>
@@ -100,6 +109,16 @@ const ComputeResourceAppsTable: FunctionComponent<Props> = ({width, height, comp
                 <NewAppWindow
                     computeResource={computeResource}
                     onNewApp={(name, executablePath, container, awsBatch, slurmOpts) => {closeNewAppWindow(); onNewApp(name, executablePath, container, awsBatch, slurmOpts);}}
+                />
+            </ModalWindow>
+            <ModalWindow
+                open={editAppWindowVisible}
+                onClose={closeEditAppWindow}
+            >
+                <NewAppWindow
+                    computeResource={computeResource}
+                    onNewApp={(name, executablePath, container, awsBatch, slurmOpts) => {closeEditAppWindow(); onEditApp(name, executablePath, container, awsBatch, slurmOpts);}}
+                    appBeingEdited={selectedAppForEditing}
                 />
             </ModalWindow>
         </div>

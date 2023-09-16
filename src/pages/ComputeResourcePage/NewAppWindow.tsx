@@ -1,13 +1,14 @@
-import { Edit } from "@mui/icons-material"
 import { FunctionComponent, useEffect, useMemo, useState } from "react"
+import { App } from "../../dbInterface/dbInterface"
 import { ComputeResourceAwsBatchOpts, ComputeResourceSlurmOpts, ProtocaasComputeResource } from "../../types/protocaas-types"
 
 type Props = {
     computeResource: ProtocaasComputeResource
     onNewApp: (name: string, executablePath: string, container: string, awsBatch?: ComputeResourceAwsBatchOpts, slurm?: ComputeResourceSlurmOpts) => void
+    appBeingEdited?: App
 }
 
-const NewAppWindow: FunctionComponent<Props> = ({computeResource, onNewApp}) => {
+const NewAppWindow: FunctionComponent<Props> = ({computeResource, onNewApp, appBeingEdited}) => {
     const [newAppName, setNewAppName] = useState('')
     const [newExecutablePath, setNewExecutablePath] = useState('')
     const [newContainer, setNewContainer] = useState('')
@@ -16,11 +17,23 @@ const NewAppWindow: FunctionComponent<Props> = ({computeResource, onNewApp}) => 
 
     const [newAwsBatchOptsValid, setNewAwsBatchOptsValid] = useState(false)
     const [newSlurmOptsValid, setNewSlurmOptsValid] = useState(false)
+
+    useEffect(() => {
+        if (!appBeingEdited) return
+        setNewAppName(appBeingEdited.name)
+        setNewExecutablePath(appBeingEdited.executablePath)
+        setNewContainer(appBeingEdited.container || '')
+        setNewAwsBatchOpts(appBeingEdited.awsBatch)
+        setNewSlurmOpts(appBeingEdited.slurm)
+    }, [appBeingEdited])
     
     const isValidAppName = useMemo(() => ((appName: string) => {
         if (!appName) return false
-        return !computeResource.apps.find(a => a.name === appName)
-    }), [computeResource])
+        if (!appBeingEdited) {
+            if (computeResource.apps.find(a => a.name === appName)) return false
+        }
+        return true
+    }), [computeResource, appBeingEdited])
 
     const isValid = useMemo(() => {
         if (!isValidAppName(newAppName)) return false
@@ -32,14 +45,28 @@ const NewAppWindow: FunctionComponent<Props> = ({computeResource, onNewApp}) => 
     }, [newAppName, newExecutablePath, newAwsBatchOpts, newSlurmOpts, isValidAppName, newAwsBatchOptsValid, newSlurmOptsValid])
 
     return (
-        <div>
-            <h3>Add a new app</h3>
+        <div style={{fontSize: 11}}>
+            <h3>
+                {
+                    appBeingEdited ? (
+                        <span>Edit app</span>
+                    ) : (
+                        <span>Add new app</span>
+                    )
+                }
+            </h3>
             <hr />
             {/* Input field for the app name */}
             <div>
                 <label htmlFor="new-app-name">App name:</label>
                 &nbsp;
-                <input type="text" id="new-app-name" value={newAppName} onChange={e => setNewAppName(e.target.value)} />
+                {
+                    !appBeingEdited ? (
+                        <input type="text" id="new-app-name" value={newAppName} onChange={e => setNewAppName(e.target.value)} />
+                    ) : (
+                        <span>{newAppName}</span>
+                    )
+                }
                 {/* Indicator on whether the app name is valid */}
                 &nbsp;&nbsp;
                 {
@@ -101,8 +128,20 @@ const NewAppWindow: FunctionComponent<Props> = ({computeResource, onNewApp}) => 
                 )
             }
             <hr />
+            <p style={{fontWeight: 'bold'}}>
+                Important: for any changes to take effect, you must restart the compute resource daemon after saving the changes.
+            </p>
+            <div>&nbsp;</div>
             {/* Button to create the app */}
-            <button disabled={!isValid} onClick={() => onNewApp(newAppName, newExecutablePath, newContainer, newAwsBatchOpts, newSlurmOpts)}>Add app</button>
+            <button disabled={!isValid} onClick={() => onNewApp(newAppName, newExecutablePath, newContainer, newAwsBatchOpts, newSlurmOpts)}>
+                {
+                    !appBeingEdited ? (
+                        <span>Add new app</span>
+                    ) : (
+                        <span>Save changes</span>
+                    )
+                }
+            </button>
         </div>
     )
 }
@@ -202,10 +241,6 @@ const EditSlurmOpts: FunctionComponent<EditSlurmOptsProps> = ({value, onChange, 
         if (!internalCpusPerTask && !internalPartition && !internalTime && !internalOtherOpts) {
             onChange(undefined)
             setValid(true)
-            return
-        }
-        if (!internalCpusPerTask || !internalPartition || !internalTime || !internalOtherOpts) {
-            setValid(false)
             return
         }
         if ((internalCpusPerTask) && (!isValidInteger(internalCpusPerTask))) {
