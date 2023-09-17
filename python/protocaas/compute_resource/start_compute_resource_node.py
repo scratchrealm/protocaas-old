@@ -300,11 +300,12 @@ class SlurmJobHandler:
             return
         max_jobs_in_batch = 20
         num_jobs_to_start = min(max_jobs_in_batch, len(self._jobs))
-        jobs_to_start = self._jobs[:num_jobs_to_start]
-        self._jobs = self._jobs[num_jobs_to_start:]
-        for job in jobs_to_start:
-            self._job_ids.remove(job['jobId'])
-        self._run_slurm_batch(jobs_to_start)
+        if num_jobs_to_start > 0:
+            jobs_to_start = self._jobs[:num_jobs_to_start]
+            self._jobs = self._jobs[num_jobs_to_start:]
+            for job in jobs_to_start:
+                self._job_ids.remove(job['jobId'])
+            self._run_slurm_batch(jobs_to_start)
     def _run_slurm_batch(self, jobs: List[dict]):
         if not os.path.exists('slurm_scripts'):
             os.mkdir('slurm_scripts')
