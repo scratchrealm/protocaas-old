@@ -13,11 +13,6 @@ env_var_keys = [
     'NODE_NAME',
     'CONTAINER_METHOD',
     'SINGLETON_JOB_ID',
-    'OUTPUT_ENDPOINT_URL',
-    'OUTPUT_AWS_ACCESS_KEY_ID',
-    'OUTPUT_AWS_SECRET_ACCESS_KEY',
-    'OUTPUT_BUCKET',
-    'OUTPUT_BUCKET_BASE_URL',
     'BATCH_AWS_ACCESS_KEY_ID',
     'BATCH_AWS_SECRET_ACCESS_KEY',
     'BATCH_AWS_REGION'
@@ -47,6 +42,7 @@ def init_compute_resource_node(*, dir: str, compute_resource_id: Optional[str]=N
         the_env['COMPUTE_RESOURCE_ID'] = compute_resource_id
         the_env['COMPUTE_RESOURCE_PRIVATE_KEY'] = compute_resource_private_key
         the_env['NODE_ID'] = _random_string(10)
+        the_env['CONTAINER_METHOD'] = os.getenv('CONTAINER_METHOD', '')
         # prompt for user input of the node name with a default of the host name
         host_name = socket.gethostname()
         the_env['NODE_NAME'] = input(f'Enter a name for this compute resource node (default: {host_name}): ') or host_name
