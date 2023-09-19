@@ -1,4 +1,4 @@
-import validateObject, { isArrayOf, isBoolean, isEqualTo, isNumber, isOneOf, isString, optional } from "../../src/types/validateObject";
+import validateObject, { isArrayOf, isBoolean, isEqualTo, isOneOf, isString, optional } from "../../src/types/validateObject";
 
 // processor.getJob
 

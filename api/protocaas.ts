@@ -1,12 +1,15 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import githubVerifyAccessToken from '../apiHelpers/githubVerifyAccessToken'
 import JSONStringifyDeterminsitic from '../apiHelpers/jsonStringifyDeterministic'
+import clientLoadProjectHandler from '../apiHelpers/ProtocaasClientRequestHandlers/clientLoadProjectHandler'
+import { isClientLoadProjectRequest, isProtocaasClientRequest, ProtocaasClientRequest, ProtocaasClientResponse } from '../apiHelpers/ProtocaasClientRequestHandlers/ProtocaasClientRequest'
 import computeResourceGetAppsHandler from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/computeResourceGetAppsHandler'
-import computeResourceGetUnfinishedJobsHandler from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/computeResourceGetUnfinishedJobsHandler'
 import computeResourceGetPubsubSubscriptionHandler from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/computeResourceGetPubsubSubscriptionHandler'
+import computeResourceGetUnfinishedJobsHandler from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/computeResourceGetUnfinishedJobsHandler'
 import computeResourceSetSpecHandler from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/computeResourceSetSpecHandler'
-import { isComputeResourceGetAppsRequest, isComputeResourceGetUnfinishedJobsRequest, isComputeResourceGetPubsubSubscriptionRequest, isComputeResourceSetSpecRequest, isProtocaasComputeResourceRequest, ProtocaasComputeResourceRequest, ProtocaasComputeResourceResponse } from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/ProtocaasComputeResourceRequest'
+import { isComputeResourceGetAppsRequest, isComputeResourceGetPubsubSubscriptionRequest, isComputeResourceGetUnfinishedJobsRequest, isComputeResourceSetSpecRequest, isProtocaasComputeResourceRequest, ProtocaasComputeResourceRequest, ProtocaasComputeResourceResponse } from '../apiHelpers/ProtocaasComputeResourceRequestHandlers/ProtocaasComputeResourceRequest'
 import processorGetJobHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorGetJobHandler'
+import processorGetOutputUploadUrlHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorGetOutputUploadUrlHandler'
 import processorSetJobConsoleOutputHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorSetJobConsoleOutputHandler'
 import processorSetJobStatusHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorSetJobStatusHandler'
 import { isProcessorGetJobRequest, isProcessorGetOutputUploadUrlRequest, isProcessorSetJobConsoleOutputRequest, isProcessorSetJobStatusRequest, isProtocaasProcessorRequest, ProtocaasProcessorRequest, ProtocaasProcessorResponse } from '../apiHelpers/ProtocaasProcessorRequestHandlers/ProtocaasProcessorRequest'
@@ -41,8 +44,7 @@ import setProjectPropertyHandler from '../apiHelpers/ProtocaasRequestHandlers/se
 import setWorkspacePropertyHandler from '../apiHelpers/ProtocaasRequestHandlers/setWorkspacePropertyHandler'
 import setWorkspaceUsersHandler from '../apiHelpers/ProtocaasRequestHandlers/setWorkspaceUsersHandler'
 import verifySignature from '../apiHelpers/verifySignature'
-import { isCreateJobRequest, isCreateProjectRequest, isCreateWorkspaceRequest, isDeleteComputeResourceRequest, isDeleteFileRequest, isDeleteJobRequest, isDeleteProjectRequest, isDeleteWorkspaceRequest, isDuplicateFileRequest, isGetActiveComputeResourceNodesRequest, isGetComputeResourceRequest, isGetComputeResourcesRequest, isGetDataBlobRequest, isGetFileRequest, isGetFilesRequest, isGetJobRequest, isGetJobsRequest, isGetProjectRequest, isGetProjectsRequest, isGetPubsubSubscriptionRequest, isGetWorkspaceRequest, isGetWorkspacesRequest, isProtocaasRequest, isRegisterComputeResourceRequest, isRenameFileRequest, isSetComputeResourceAppsRequest, isSetFileRequest, isSetJobPropertyRequest, isSetProjectPropertyRequest, isSetWorkspacePropertyRequest, isSetWorkspaceUsersRequest } from '../src/types/ProtocaasRequest'
-import processorGetOutputUploadUrlHandler from '../apiHelpers/ProtocaasProcessorRequestHandlers/processorGetOutputUploadUrlHandler'
+import { isCreateJobRequest, isCreateProjectRequest, isCreateWorkspaceRequest, isDeleteComputeResourceRequest, isDeleteFileRequest, isDeleteJobRequest, isDeleteProjectRequest, isDeleteWorkspaceRequest, isDuplicateFileRequest, isGetActiveComputeResourceNodesRequest, isGetComputeResourceRequest, isGetComputeResourcesRequest, isGetDataBlobRequest, isGetFileRequest, isGetFilesRequest, isGetJobRequest, isGetJobsRequest, isGetProjectRequest, isGetProjectsRequest, isGetPubsubSubscriptionRequest, isGetWorkspaceRequest, isGetWorkspacesRequest, isProtocaasRequest, isRegisterComputeResourceRequest, isRenameFileRequest, isSetComputeResourceAppsRequest, isSetFileRequest, isSetJobPropertyRequest, isSetProjectPropertyRequest, isSetWorkspacePropertyRequest, isSetWorkspaceUsersRequest, ProtocaasRequest } from '../src/types/ProtocaasRequest'
 
 const ADMIN_USER_IDS = JSON.parse(process.env.ADMIN_USER_IDS || '[]') as string[]
 
@@ -77,6 +79,10 @@ module.exports = (req: VercelRequest, res: VercelResponse) => {
 
         if (isProtocaasComputeResourceRequest(request)) {
             return await handleComputeResourceRequest(request)
+        }
+
+        if (isProtocaasClientRequest(request)) {
+            return await handleClientRequest(request)
         }
 
         if (!isProtocaasRequest(request)) {
@@ -257,5 +263,14 @@ const handleComputeResourceRequest = async (request: ProtocaasComputeResourceReq
     }
     else {
         throw Error(`Unexpected compute resource request type: ${(request as any).type}`)
+    }
+}
+
+const handleClientRequest = async (request: ProtocaasClientRequest): Promise<ProtocaasClientResponse> => {
+    if (isClientLoadProjectRequest(request)) {
+        return await clientLoadProjectHandler(request)
+    }
+    else {
+        throw Error(`Unexpected client request type: ${(request as any).type}`)
     }
 }

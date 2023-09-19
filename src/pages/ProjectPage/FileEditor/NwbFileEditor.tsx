@@ -10,6 +10,7 @@ import { ComputeResourceSpecProcessor, ProtocaasFile } from "../../../types/prot
 import { useWorkspace } from "../../WorkspacePage/WorkspacePageContext";
 import { AssetResponse } from "../DandiNwbSelector/types";
 import JobsWindow from "../JobsWindow/JobsWindow";
+import LoadNwbInPythonWindow from "../LoadNwbInPythonWindow/LoadNwbInPythonWindow";
 import { useProject } from "../ProjectPageContext";
 import RunSpikeSortingWindow from "./RunSpikeSortingWindow/RunSpikeSortingWindow";
 
@@ -83,7 +84,7 @@ export const useElectricalSeriesPaths = (nwbFile: RemoteH5File | undefined) => {
 const NwbFileEditorChild: FunctionComponent<Props> = ({fileName, width, height}) => {
     const [assetResponse, setAssetResponse] = useState<AssetResponse | null>(null)
 
-    const {projectId} = useProject()
+    const {projectId, project} = useProject()
 
     const {accessToken, userId} = useGithubAuth()
     const auth = useMemo(() => (accessToken ? {githubAccessToken: accessToken, userId} : {}), [accessToken, userId])
@@ -139,6 +140,8 @@ const NwbFileEditorChild: FunctionComponent<Props> = ({fileName, width, height})
     const {visible: runSpikeSortingWindowVisible, handleOpen: openRunSpikeSortingWindow, handleClose: closeRunSpikeSortingWindow} = useModalDialog()
     const [selectedSpikeSortingProcessor, setSelectedSpikeSortingProcessor] = useState<string | undefined>(undefined)
 
+    const {visible: loadNwbInPythonWindowVisible, handleOpen: openLoadNwbInPythonWindow, handleClose: closeLoadNwbInPythonWindow} = useModalDialog()
+
     return (
         <div style={{position: 'absolute', width, height, background: 'white'}}>
             <hr />
@@ -168,13 +171,22 @@ const NwbFileEditorChild: FunctionComponent<Props> = ({fileName, width, height})
                 </tbody>
             </table>
             <div>&nbsp;</div>
+            <ul>
             {
                 nwbUrl && (
-                    <div>
-                        <Hyperlink onClick={handleOpenInNeurosift}>Open in Neurosift</Hyperlink>
-                    </div>
+                    <li>
+                        <Hyperlink onClick={handleOpenInNeurosift}>Open NWB file in Neurosift</Hyperlink>
+                    </li>
                 )
             }
+            {
+                nwbUrl && (
+                    <li>
+                        <Hyperlink onClick={openLoadNwbInPythonWindow}>Load NWB file in Python</Hyperlink>
+                    </li>
+                )
+            }
+            </ul>
             <div>&nbsp;</div>
             {
                 electricalSeriesPaths && (
@@ -198,6 +210,16 @@ const NwbFileEditorChild: FunctionComponent<Props> = ({fileName, width, height})
                     spikeSortingProcessorName={selectedSpikeSortingProcessor}
                     nwbFile={nwbFile}
                 />
+            </ModalWindow>
+            <ModalWindow
+                open={loadNwbInPythonWindowVisible}
+                onClose={closeLoadNwbInPythonWindow}
+            >
+                {project && <LoadNwbInPythonWindow
+                    onClose={closeLoadNwbInPythonWindow}
+                    project={project}
+                    fileName={fileName}
+                />}
             </ModalWindow>
         </div>
     )

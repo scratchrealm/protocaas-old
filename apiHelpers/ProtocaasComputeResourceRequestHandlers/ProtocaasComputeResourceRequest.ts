@@ -1,5 +1,5 @@
-import validateObject, { isArrayOf, isBoolean, isEqualTo, isNumber, isOneOf, isString, optional } from "../../src/types/validateObject";
-import {ComputeResourceAwsBatchOpts, ComputeResourceSlurmOpts, ComputeResourceSpec, isComputeResourceAwsBatchOpts, isComputeResourceSlurmOpts, isComputeResourceSpec, isProtocaasJob, ProtocaasJob} from "../../src/types/protocaas-types"
+import { ComputeResourceAwsBatchOpts, ComputeResourceSlurmOpts, ComputeResourceSpec, isComputeResourceAwsBatchOpts, isComputeResourceSlurmOpts, isComputeResourceSpec, isProtocaasJob, ProtocaasJob } from "../../src/types/protocaas-types";
+import validateObject, { isArrayOf, isEqualTo, isOneOf, isString, optional } from "../../src/types/validateObject";
 
 // computeResource.getUnfinishedJobs
 
