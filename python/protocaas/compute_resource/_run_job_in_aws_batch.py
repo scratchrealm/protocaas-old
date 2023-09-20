@@ -1,6 +1,5 @@
 from typing import List
 import os
-from ._start_job import _get_kachery_cloud_credentials
 
 # You must first setup the AWS credentials
 # You can do this in multiple ways like using the aws configure command
@@ -53,6 +52,7 @@ def _run_job_in_aws_batch(
         'JOB_PRIVATE_KEY': job_private_key,
         'APP_EXECUTABLE': command
     }
+    from ._start_job import _get_kachery_cloud_credentials # avoid circular import
     kachery_cloud_client_id, kachery_cloud_private_key = _get_kachery_cloud_credentials()
     if kachery_cloud_client_id is not None:
         env_vars['KACHERY_CLOUD_CLIENT_ID'] = kachery_cloud_client_id
