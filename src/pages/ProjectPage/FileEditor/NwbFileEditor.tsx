@@ -13,6 +13,7 @@ import JobsWindow from "../JobsWindow/JobsWindow";
 import LoadNwbInPythonWindow from "../LoadNwbInPythonWindow/LoadNwbInPythonWindow";
 import { useProject } from "../ProjectPageContext";
 import RunSpikeSortingWindow from "./RunSpikeSortingWindow/RunSpikeSortingWindow";
+import SpikeSortingOutputSection from "./SpikeSortingOutputSection/SpikeSortingOutputSection";
 
 
 type Props = {
@@ -84,7 +85,7 @@ export const useElectricalSeriesPaths = (nwbFile: RemoteH5File | undefined) => {
 const NwbFileEditorChild: FunctionComponent<Props> = ({fileName, width, height}) => {
     const [assetResponse, setAssetResponse] = useState<AssetResponse | null>(null)
 
-    const {projectId, project} = useProject()
+    const {projectId, project, jobs} = useProject()
 
     const {accessToken, userId} = useGithubAuth()
     const auth = useMemo(() => (accessToken ? {githubAccessToken: accessToken, userId} : {}), [accessToken, userId])
@@ -142,6 +143,18 @@ const NwbFileEditorChild: FunctionComponent<Props> = ({fileName, width, height})
 
     const {visible: loadNwbInPythonWindowVisible, handleOpen: openLoadNwbInPythonWindow, handleClose: closeLoadNwbInPythonWindow} = useModalDialog()
 
+    const spikeSortingJob = useMemo(() => {
+        if (!jobs) return undefined
+        if (!nbFile) return undefined
+        if (!nbFile.jobId) return undefined
+        const job = jobs.find(j => (j.jobId === nbFile.jobId))
+        if (!job) return
+        if (job.processorSpec.tags.map(t => t.tag).includes('spike_sorter')) {
+            return job
+        }
+        return undefined
+    }, [jobs, nbFile])
+
     return (
         <div style={{position: 'absolute', width, height, background: 'white'}}>
             <hr />
@@ -187,6 +200,14 @@ const NwbFileEditorChild: FunctionComponent<Props> = ({fileName, width, height})
                 )
             }
             </ul>
+            {
+                spikeSortingJob && (
+                    <SpikeSortingOutputSection
+                        fileName={fileName}
+                        spikeSortingJob={spikeSortingJob}
+                    />
+                )
+            }
             <div>&nbsp;</div>
             {
                 electricalSeriesPaths && (

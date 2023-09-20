@@ -189,7 +189,7 @@ const FileBrowser2: FunctionComponent<Props> = ({width, height, onOpenFile, file
         const newExpandedFolders = new Set<string>()
         const handleNode = (node: TreeNode) => {
             if (node.type === 'folder') {
-                if ((node.name) && (node.subNodes.length <= 5)) {
+                if ((node.name) && (!node.name.startsWith('.')) && (node.subNodes.length <= 5)) {
                     newExpandedFolders.add(node.name)
                 }
                 for (const subNode of node.subNodes) {

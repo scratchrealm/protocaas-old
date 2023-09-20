@@ -73,6 +73,17 @@ def _start_job(*,
     working_dir = os.getcwd() + '/jobs/' + job_id
     os.makedirs(working_dir, exist_ok=True)
 
+    env_vars = {
+        'PYTHONUNBUFFERED': '1',
+        'JOB_ID': job_id,
+        'JOB_PRIVATE_KEY': job_private_key,
+        'APP_EXECUTABLE': executable_path
+    }
+    kachery_cloud_client_id, kachery_cloud_private_key = _get_kachery_cloud_credentials()
+    if kachery_cloud_client_id is not None:
+        env_vars['KACHERY_CLOUD_CLIENT_ID'] = kachery_cloud_client_id
+        env_vars['KACHERY_CLOUD_PRIVATE_KEY'] = kachery_cloud_private_key
+
     if not container:
         if run_process:
             print(f'Running: {executable_path}')
@@ -85,10 +96,7 @@ def _start_job(*,
                 stderr=subprocess.DEVNULL,
                 env={
                     **os.environ,
-                    'PYTHONUNBUFFERED': '1',
-                    'JOB_ID': job_id,
-                    'JOB_PRIVATE_KEY': job_private_key,
-                    'APP_EXECUTABLE': executable_path
+                    **env_vars
                 }
             )
         elif return_shell_command:
@@ -100,16 +108,14 @@ def _start_job(*,
             os.makedirs(tmpdir, exist_ok=True)
             os.makedirs(tmpdir + '/working', exist_ok=True)
             cmd2 = [
-                'docker', 'run', '-it',
-                '-v', f'{tmpdir}:/tmp',
-                '--workdir', '/tmp/working', # the working directory will be /tmp/working
-                '-e', 'PYTHONUNBUFFERED=1',
-                '-e', f'JOB_ID={job_id}',
-                '-e', f'JOB_PRIVATE_KEY={job_private_key}',
-                '-e', f'APP_EXECUTABLE={executable_path}',
-                container,
-                executable_path
+                'docker', 'run', '-it'
             ]
+            cmd2.extend(['v', f'{tmpdir}:/tmp'])
+            cmd2.extend(['--workdir', '/tmp/working']) # the working directory will be /tmp/working
+            for k, v in env_vars.items():
+                cmd2.extend(['-e', f'{k}={v}'])
+            cmd2.extend([container])
+            cmd2.extend([executable_path])
             if run_process:
                 print(f'Running: {" ".join(cmd2)}')
                 process = subprocess.Popen(
@@ -126,21 +132,17 @@ def _start_job(*,
             tmpdir = working_dir + '/tmp' # important to provide a /tmp directory for singularity so that it doesn't run out of disk space
             os.makedirs(tmpdir, exist_ok=True)
             os.makedirs(tmpdir + '/working', exist_ok=True)
-            cmd2 = [
-                'singularity', 'exec',
-                '--bind', f'{tmpdir}:/tmp',
-                # The working directory should be /tmp/working so that if the container wants to write to the working directory, it will not run out of space
-                '--pwd', '/tmp/working',
-                '--cleanenv', # this is important to prevent singularity from passing environment variables to the container
-                '--contain', # we don't want singularity to mount the home or tmp directories of the host
-                '--nv',
-                '--env', 'PYTHONUNBUFFERED=1',
-                '--env', f'JOB_ID={job_id}',
-                '--env', f'JOB_PRIVATE_KEY={job_private_key}',
-                '--env', f'APP_EXECUTABLE={executable_path}',
-                f'docker://{container}',
-                executable_path
-            ]
+            cmd2 = ['singularity', 'exec']
+            cmd2.extend(['--bind', f'{tmpdir}:/tmp'])
+            # The working directory should be /tmp/working so that if the container wants to write to the working directory, it will not run out of space
+            cmd2.extend(['--pwd', '/tmp/working'])
+            cmd2.extend(['--cleanenv']) # this is important to prevent singularity from passing environment variables to the container
+            cmd2.extend(['--contain']) # we don't want singularity to mount the home or tmp directories of the host
+            cmd2.extend(['--nv'])
+            for k, v in env_vars.items():
+                cmd2.extend(['--env', f'{k}={v}'])
+            cmd2.extend([f'docker://{container}'])
+            cmd2.extend([executable_path])
             if run_process:
                 print(f'Running: {" ".join(cmd2)}')
                 process = subprocess.Popen(
@@ -176,3 +178,12 @@ def _start_job(*,
 #             print(prefix + line.decode('utf-8'))
 #         else:
 #             break
+
+def _get_kachery_cloud_credentials():
+    try:
+        from kachery_cloud._client_keys import _get_client_keys_hex
+    except:
+        print(f'Warning: unable to import client keys from kachery_cloud')
+        return None, None
+    client_id, private_key = _get_client_keys_hex()
+    return client_id, private_key
