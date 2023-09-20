@@ -59,11 +59,10 @@ class App:
                 raise Exception('JOB_PRIVATE_KEY is not set')
             if JOB_INTERNAL == '1':
                 # In this mode, we run the job directly
-                # Not interacting with the protocaas API
                 # This is called internally by the other run mode (need to explain this better)
                 return self._run_job(job_id=JOB_ID, job_private_key=JOB_PRIVATE_KEY)
             else:
-                # In this mode we run the job, including interacting with the protocaas API
+                # In this mode we run the job, including the top-level interactions with the protocaas API, such as setting the status and the console output, and checking whether the job has been canceled/deleted
                 if APP_EXECUTABLE is None:
                     raise Exception('APP_EXECUTABLE is not set')
                 return _run_job(
