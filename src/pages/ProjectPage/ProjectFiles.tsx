@@ -104,9 +104,10 @@ const ProjectTabWidget: FunctionComponent<{width: number, height: number}> = ({w
             tabs={
                 openTabs.map(({tabName}) => ({
                     id: tabName,
-                    label: labelFromTabName(tabName),
+                    label: labelFromTabName(tabName, {abbreviate: true}),
                     closeable: true,
-                    icon: iconFromTabName(tabName)
+                    icon: iconFromTabName(tabName),
+                    title: labelFromTabName(tabName, {abbreviate: false})
                 }))
             }
             currentTabId={currentTabName}
@@ -149,7 +150,7 @@ const ProjectTabWidget: FunctionComponent<{width: number, height: number}> = ({w
 
 const maxTabLabelLength = 18
 
-const labelFromTabName = (tabName: string) => {
+const labelFromTabName = (tabName: string, o: {abbreviate: boolean}) => {
     let ret = ''
     if (tabName.startsWith('file:')) {
         ret = tabName.slice('file:'.length)
@@ -158,8 +159,10 @@ const labelFromTabName = (tabName: string) => {
         ret = 'job:' + tabName.slice('job:'.length)
     }
     else ret = tabName
-    if (ret.length > maxTabLabelLength) {
-        ret = ret.slice(0, maxTabLabelLength - 3) + '...'
+    if (o.abbreviate) {
+        if (ret.length > maxTabLabelLength) {
+            ret = ret.slice(0, maxTabLabelLength - 3) + '...'
+        }
     }
     return ret
 }

@@ -189,7 +189,8 @@ const FileBrowser2: FunctionComponent<Props> = ({width, height, onOpenFile, file
         const newExpandedFolders = new Set<string>()
         const handleNode = (node: TreeNode) => {
             if (node.type === 'folder') {
-                if ((node.name) && (!node.name.startsWith('.')) && (node.subNodes.length <= 5)) {
+                const isTopLevelHiddenFolder = (!node.name.includes('/')) && node.name.startsWith('.')
+                if ((node.name) && (!isTopLevelHiddenFolder) && (node.subNodes.length <= 5)) {
                     newExpandedFolders.add(node.name)
                 }
                 for (const subNode of node.subNodes) {
@@ -266,7 +267,7 @@ const FileBrowser2: FunctionComponent<Props> = ({width, height, onOpenFile, file
     }, [files, selectedFileNames])
     
     return (
-        <div style={{position: 'absolute', width, height}}>
+        <div style={{position: 'absolute', width, height, userSelect: 'none'}}>
             <div style={{position: 'absolute', width: width - hPadding * 2, height: menuBarHeight - vPadding * 2, paddingLeft: hPadding, paddingRight: hPadding, paddingTop: vPadding, paddingBottom: vPadding}}>
                 <FileBrowserMenuBar
                     width={width - hPadding * 2}

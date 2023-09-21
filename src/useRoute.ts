@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { ProjectPageViewType } from "./pages/ProjectPage/ProjectPage"
+import { WorkspacePageViewType } from "./pages/WorkspacePage/WorkspacePage"
 
 export type Route = {
     page: 'home'
@@ -13,6 +14,7 @@ export type Route = {
 } | {
     page: 'workspace'
     workspaceId: string
+    tab?: WorkspacePageViewType
 } | {
     page: 'github-auth'
 } | {
@@ -51,9 +53,11 @@ const useRoute = () => {
         else if (p.startsWith('/workspace/')) {
             const a = p.split('/')
             const workspaceId = a[2]
+            const tab = (searchParams.get('tab') || undefined) as WorkspacePageViewType | undefined
             return {
                 page: 'workspace',
-                workspaceId
+                workspaceId,
+                tab
             }
         }
         else if (p === '/github/auth') {
@@ -106,7 +110,11 @@ const useRoute = () => {
             navigate(u)
         }
         else if (r.page === 'workspace') {
-            navigate(`/workspace/${r.workspaceId}`)
+            let u = `/workspace/${r.workspaceId}`
+            if (r.tab) {
+                u += `?tab=${r.tab}`
+            }
+            navigate(u)
         }
         else if (r.page === 'github-auth') {
             navigate('/github/auth')

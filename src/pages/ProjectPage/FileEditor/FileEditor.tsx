@@ -5,6 +5,7 @@ import { useProject } from "../ProjectPageContext";
 import NwbFileEditor from "./NwbFileEditor";
 import ScriptFileEditor from "./ScriptFileEditor";
 import TextFileEditor from "./TextFileEditor";
+import FigurlFileEditor from "./FigurlFileEditor";
 
 type Props = {
     fileName: string
@@ -80,6 +81,15 @@ const FileEditor: FunctionComponent<Props> = ({fileName, readOnly, fileContent, 
     else if (fileName.endsWith('.nwb')) {
         return (
             <NwbFileEditor
+                fileName={fileName}
+                width={width}
+                height={height}
+            />
+        )
+    }
+    else if (fileName.endsWith('.figurl')) {
+        return (
+            <FigurlFileEditor
                 fileName={fileName}
                 width={width}
                 height={height}

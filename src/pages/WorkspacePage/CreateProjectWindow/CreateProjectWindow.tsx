@@ -20,7 +20,7 @@ const CreateProjectWindow: FunctionComponent<Props> = ({onClose}) => {
     const handleSubmit = useCallback(async () => {
         setCreatingProject(true)
         const newProjectId = await createProject(workspaceId, newProjectName, auth)
-        await setFileText(workspaceId, newProjectId, 'description.md', `# ${newProjectName}\n\n`, auth)
+        // await setFileText(workspaceId, newProjectId, 'description.md', `# ${newProjectName}\n\n`, auth)
         setRoute({page: 'project', projectId: newProjectId})
         onClose()
     }, [newProjectName, workspaceId, auth, onClose, setRoute])

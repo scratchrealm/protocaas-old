@@ -78,14 +78,14 @@ const FileBrowserMenuBar: FunctionComponent<FileBrowserMenuBarProps> = ({ width,
     }, [workspaceId, projectId, auth, closeNewFileWindow, refreshFiles, openTab])
     return (
         <div>
-            <SmallIconButton
+            {/* <SmallIconButton
                 icon={<Add />}
                 disabled={operating}
                 title="Add a new file"
                 label="Add file"
                 onClick={openNewFileWindow}
             />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; */}
             {/* Refresh */}
             <SmallIconButton
                 icon={<Refresh />}
