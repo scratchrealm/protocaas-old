@@ -8,6 +8,7 @@ import { useWorkspace } from "../WorkspacePage/WorkspacePageContext";
 import ProjectsMenuBar from "./ProjectsMenuBar";
 import ProjectsTable from "./ProjectsTable";
 import WorkspaceSettingsWindow from "./WorkspaceSettingsWindow";
+import ComputeResourceNameDisplay from "../../ComputeResourceNameDisplay";
 
 type Props = {
     width: number
@@ -30,6 +31,10 @@ const WorkspaceHome: FunctionComponent<Props> = ({width, height}) => {
                     <tr>
                         <td>Workspace ID:</td>
                         <td>{workspace?.workspaceId}</td>
+                    </tr>
+                    <tr>
+                        <td>Compute resource:</td>
+                        <td>{workspace ? <ComputeResourceNameDisplay computeResourceId={workspace.computeResourceId} link={true} /> : ''}</td>
                     </tr>
                     <tr>
                         <td>Created:</td>

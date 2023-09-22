@@ -9,6 +9,7 @@ import useRoute from "../../useRoute";
 import { useWorkspace } from "../WorkspacePage/WorkspacePageContext";
 import { useProject } from "./ProjectPageContext";
 import ProjectSettingsWindow from "./ProjectSettingsWindow";
+import ComputeResourceNameDisplay from "../../ComputeResourceNameDisplay";
 
 type Props = {
     width: number
@@ -39,6 +40,10 @@ const ProjectHome: FunctionComponent<Props> = ({width, height}) => {
                     <tr>
                         <td>Workspace:</td>
                         <td><Hyperlink onClick={() => setRoute({page: 'workspace', workspaceId})}>{workspace?.name}</Hyperlink></td>
+                    </tr>
+                    <tr>
+                        <td>Compute resource:</td>
+                        <td>{workspace ? <ComputeResourceNameDisplay computeResourceId={workspace.computeResourceId} link={true} /> : ''}</td>
                     </tr>
                     <tr>
                         <td>Created:</td>
