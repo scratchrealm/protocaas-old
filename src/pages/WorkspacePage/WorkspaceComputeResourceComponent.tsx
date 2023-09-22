@@ -1,7 +1,7 @@
 import { Delete, Edit } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import { FunctionComponent, useState } from "react";
-import ComputeResourceIdComponent from "../../ComputeResourceIdComponent";
+import ComputeResourceNameDisplay from "../../ComputeResourceNameDisplay";
 import { useComputeResources } from "../ComputeResourcesPage/ComputeResourcesContext";
 import { useWorkspace } from "./WorkspacePageContext";
 
@@ -23,7 +23,7 @@ const WorkspaceComputeResourceComponent: FunctionComponent<Props> = () => {
                                 <td>Using compute resource:</td>
                                 <td>{
                                     workspace.computeResourceId ? (
-                                        <ComputeResourceIdComponent computeResourceId={workspace.computeResourceId} />
+                                        <ComputeResourceNameDisplay computeResourceId={workspace.computeResourceId} />
                                     ) : (
                                         <span>DEFAULT</span>
                                     )

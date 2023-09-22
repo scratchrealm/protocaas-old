@@ -1,5 +1,5 @@
 import { FunctionComponent, PropsWithChildren, useCallback, useEffect, useMemo, useState } from "react";
-import ComputeResourceIdComponent from "../../../ComputeResourceIdComponent";
+import ComputeResourceNameDisplay from "../../../ComputeResourceNameDisplay";
 import { defaultJobDefinition, fetchJob, ProtocaasProcessingJobDefinition } from "../../../dbInterface/dbInterface";
 import { useGithubAuth } from "../../../GithubAuth/useGithubAuth";
 import { ProtocaasJob } from "../../../types/protocaas-types";
@@ -87,7 +87,7 @@ const JobView: FunctionComponent<Props> = ({ width, height, jobId }) => {
                     </tr>
                     <tr>
                         <td>Compute resource:</td>
-                        <td><ComputeResourceIdComponent computeResourceId={job.computeResourceId} link={true} /></td>
+                        <td><ComputeResourceNameDisplay computeResourceId={job.computeResourceId} link={true} /></td>
                     </tr>
                     <tr>
                         <td>Node:</td>

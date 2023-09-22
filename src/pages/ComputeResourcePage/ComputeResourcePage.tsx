@@ -1,5 +1,5 @@
 import { FunctionComponent, useCallback, useEffect, useMemo, useState } from "react";
-import ComputeResourceIdComponent from "../../ComputeResourceIdComponent";
+import ComputeResourceNameDisplay from "../../ComputeResourceNameDisplay";
 import { App, fetchComputeResource, fetchJobsForComputeResource, setComputeResourceApps } from "../../dbInterface/dbInterface";
 import { useGithubAuth } from "../../GithubAuth/useGithubAuth";
 import { timeAgoString } from "../../timeStrings";
@@ -87,7 +87,7 @@ const ComputeResourcesPage: FunctionComponent<Props> = ({width, height, computeR
                     </tr>
                     <tr>
                         <td>Compute resource ID</td>
-                        <td><ComputeResourceIdComponent computeResourceId={computeResourceId} /></td>
+                        <td><ComputeResourceNameDisplay computeResourceId={computeResourceId} /></td>
                     </tr>
                     <tr>
                         <td>Owner</td>

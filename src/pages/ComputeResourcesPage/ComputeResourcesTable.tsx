@@ -1,7 +1,7 @@
 import { Delete } from "@mui/icons-material"
 import { FunctionComponent, useCallback } from "react"
 import Hyperlink from "../../components/Hyperlink"
-import ComputeResourceIdComponent from "../../ComputeResourceIdComponent"
+import ComputeResourceNameDisplay from "../../ComputeResourceNameDisplay"
 import { confirm } from "../../confirm_prompt_alert"
 import { timeAgoString } from "../../timeStrings"
 import UserIdComponent from "../../UserIdComponent"
@@ -46,7 +46,7 @@ const ComputeResourcesTable: FunctionComponent<Props> = () => {
                             </td>
                             <td>
                                 <Hyperlink onClick={() => setRoute({page: 'compute-resource', computeResourceId: cr.computeResourceId})}>
-                                    <ComputeResourceIdComponent computeResourceId={cr.computeResourceId} link={false} />
+                                    <ComputeResourceNameDisplay computeResourceId={cr.computeResourceId} link={false} />
                                 </Hyperlink>
                             </td>
                             <td><UserIdComponent userId={cr.ownerId} /></td>

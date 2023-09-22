@@ -2,7 +2,7 @@ import { faCaretDown, faCaretRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { FunctionComponent, useCallback, useEffect, useMemo, useReducer } from "react";
 import Hyperlink from "../../../components/Hyperlink";
-import ComputeResourceIdComponent from "../../../ComputeResourceIdComponent";
+import ComputeResourceNameDisplay from "../../../ComputeResourceNameDisplay";
 import { timeAgoString } from "../../../timeStrings";
 import { ProtocaasJob } from "../../../types/protocaas-types";
 import UserIdComponent from "../../../UserIdComponent";
@@ -280,7 +280,7 @@ const JobsTable: FunctionComponent<Props> = ({ width, height, fileName, jobs, on
                                                 <UserIdComponent userId={jj.userId} />
                                             </td>
                                             <td>{timeAgoString(jj.timestampCreated)}</td>
-                                            <td><ComputeResourceIdComponent computeResourceId={jj.computeResourceId} link={true} /></td>
+                                            <td><ComputeResourceNameDisplay computeResourceId={jj.computeResourceId} link={true} /></td>
                                             <td>{role}</td>
                                         </tr>
                                     )
@@ -314,7 +314,7 @@ const JobsTable: FunctionComponent<Props> = ({ width, height, fileName, jobs, on
                                                 <UserIdComponent userId={getUserIdForBatch(rowItem.batchId)} />
                                             </td>
                                             <td>{timeAgoString(rowItem.timestampCreated)}</td>
-                                            <td><ComputeResourceIdComponent computeResourceId={getComputeResourceIdForBatch(rowItem.batchId)} link={true} /></td>
+                                            <td><ComputeResourceNameDisplay computeResourceId={getComputeResourceIdForBatch(rowItem.batchId)} link={true} /></td>
                                             <td>
                                                 {rowItem.role}
                                             </td>

@@ -15,6 +15,7 @@ import ProjectHome from "./ProjectHome";
 import ProjectJobs from "./ProjectJobs";
 import { SetupProjectPage, useProject } from "./ProjectPageContext";
 import RunBatchSpikeSortingWindow from "./RunBatchSpikeSortingWindow/RunBatchSpikeSortingWindow";
+import { SetupComputeResources } from "../ComputeResourcesPage/ComputeResourcesContext";
 
 type Props = {
     width: number
@@ -82,21 +83,23 @@ const ProjectPageChild: FunctionComponent<Props> = ({width, height}) => {
         <SetupWorkspacePage
             workspaceId={workspaceId}
         >
-            <div style={{position: 'absolute', width, height, overflow: 'hidden'}}>
-                <HBoxLayout
-                    widths={[leftMenuPanelWidth, width - leftMenuPanelWidth]}
-                    height={height}
-                >
-                    <LeftMenuPanel
-                        width={0}
-                        height={0}
-                    />
-                    <MainPanel
-                        width={0}
-                        height={0}
-                    />
-                </HBoxLayout>
-            </div>
+            <SetupComputeResources>
+                <div style={{position: 'absolute', width, height, overflow: 'hidden'}}>
+                    <HBoxLayout
+                        widths={[leftMenuPanelWidth, width - leftMenuPanelWidth]}
+                        height={height}
+                    >
+                        <LeftMenuPanel
+                            width={0}
+                            height={0}
+                        />
+                        <MainPanel
+                            width={0}
+                            height={0}
+                        />
+                    </HBoxLayout>
+                </div>
+            </SetupComputeResources>
         </SetupWorkspacePage>
     )
 }
