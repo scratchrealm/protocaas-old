@@ -5,6 +5,7 @@ import ComputeResourcesPage from "../ComputeResourcePage/ComputeResourcePage";
 import ProcessorsView from "../ProjectPage/ProcessorsView";
 import { SetupWorkspacePage, useWorkspace } from "../WorkspacePage/WorkspacePageContext";
 import WorkspaceHome from "./WorkspaceHome";
+import { SetupComputeResources } from "../ComputeResourcesPage/ComputeResourcesContext";
 
 type Props = {
     width: number
@@ -17,11 +18,13 @@ const WorkspacePage: FunctionComponent<Props> = ({workspaceId, width, height}) =
         <SetupWorkspacePage
             workspaceId={workspaceId}
         >
-            <WorkspacePageChild
-                width={width}
-                height={height}
-                workspaceId={workspaceId}
-            />
+            <SetupComputeResources>
+                <WorkspacePageChild
+                    width={width}
+                    height={height}
+                    workspaceId={workspaceId}
+                />
+            </SetupComputeResources>
         </SetupWorkspacePage>
     )
 }
