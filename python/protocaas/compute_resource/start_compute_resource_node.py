@@ -122,7 +122,7 @@ class Daemon:
             self._start_job(job)
         
         # SLURM jobs
-        slurm_jobs = [job for job in jobs if self._is_slurm_job(job)]
+        slurm_jobs = [job for job in jobs if self._is_slurm_job(job) and self._job_is_pending(job)]
         for job in slurm_jobs:
             processor_name = job['processorName']
             if processor_name not in self._slurm_job_handlers_by_processor:
@@ -146,6 +146,8 @@ class Daemon:
         return self._get_job_resource_type(job) == 'aws_batch'
     def _is_slurm_job(self, job: dict) -> bool:
         return self._get_job_resource_type(job) == 'slurm'
+    def _job_is_pending(self, job: dict) -> bool:
+        return job['status'] == 'pending'
     def _start_job(self, job: dict, run_process: bool = True, return_shell_command: bool = False):
         job_id = job['jobId']
         if job_id in self._attempted_to_start_job_ids:
@@ -311,6 +313,7 @@ class SlurmJobHandler:
             os.mkdir('slurm_scripts')
         random_str = os.urandom(16).hex()
         slurm_script_fname = f'slurm_scripts/slurm_batch_{random_str}.sh'
+        script_has_at_least_one_job = False # important to do this so we don't run an empty script
         with open(slurm_script_fname, 'w') as f:
             f.write('#!/bin/bash\n')
             f.write('\n')
@@ -323,27 +326,29 @@ class SlurmJobHandler:
                     f.write(f'    {cmd}\n')
                     f.write('fi\n')
                     f.write('\n')
+                    script_has_at_least_one_job = True
             f.write('\n')
-        # run the slurm script with srun
-        slurm_cpus_per_task = self._slurm_opts.get('cpusPerTask', None)
-        slurm_partition = self._slurm_opts.get('partition', None)
-        slurm_time = self._slurm_opts.get('time', None)
-        slurm_other_opts = self._slurm_opts.get('otherOpts', None)
-        oo = []
-        if slurm_cpus_per_task is not None:
-            oo.append(f'--cpus-per-task={slurm_cpus_per_task}')
-        if slurm_partition is not None:
-            oo.append(f'--partition={slurm_partition}')
-        if slurm_time is not None:
-            oo.append(f'--time={slurm_time}')
-        if slurm_other_opts is not None:
-            oo.append(slurm_other_opts.split(' '))
-        slurm_opts_str = ' '.join(oo)
-        cmd = f'srun -n {len(jobs)} {slurm_opts_str} bash {slurm_script_fname}'
-        print(f'Running slurm batch: {cmd}')
-        subprocess.Popen(
-            cmd.split(' '),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True
-        )
+        if script_has_at_least_one_job:
+            # run the slurm script with srun
+            slurm_cpus_per_task = self._slurm_opts.get('cpusPerTask', None)
+            slurm_partition = self._slurm_opts.get('partition', None)
+            slurm_time = self._slurm_opts.get('time', None)
+            slurm_other_opts = self._slurm_opts.get('otherOpts', None)
+            oo = []
+            if slurm_cpus_per_task is not None:
+                oo.append(f'--cpus-per-task={slurm_cpus_per_task}')
+            if slurm_partition is not None:
+                oo.append(f'--partition={slurm_partition}')
+            if slurm_time is not None:
+                oo.append(f'--time={slurm_time}')
+            if slurm_other_opts is not None:
+                oo.append(slurm_other_opts.split(' '))
+            slurm_opts_str = ' '.join(oo)
+            cmd = f'srun -n {len(jobs)} {slurm_opts_str} bash {slurm_script_fname}'
+            print(f'Running slurm batch: {cmd}')
+            subprocess.Popen(
+                cmd.split(' '),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True
+            )
