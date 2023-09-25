@@ -26,6 +26,9 @@ export type Route = {
     page: 'register-compute-resource'
     computeResourceId: string
     resourceCode: string
+} | {
+    page: 'import-dandiset'
+    dandisetId: string
 }
 
 const useRoute = () => {
@@ -88,6 +91,14 @@ const useRoute = () => {
                 resourceCode
             }
         }
+        else if (p.startsWith('/import-dandiset/')) {
+            const a = p.split('/')
+            const dandisetId = a[2]
+            return {
+                page: 'import-dandiset',
+                dandisetId
+            }
+        }
         else {
             return {
                 page: 'home'
@@ -127,6 +138,9 @@ const useRoute = () => {
         }
         else if (r.page === 'register-compute-resource') {
             navigate(`/register-compute-resource/${r.computeResourceId}/${r.resourceCode}`)
+        }
+        else if (r.page === 'import-dandiset') {
+            navigate(`/import-dandiset/${r.dandisetId}`)
         }
     }, [navigate])
 

@@ -11,6 +11,7 @@ import WorkspacePage from "./pages/WorkspacePage/WorkspacePage";
 import { SetupSPMain } from "./SPMainContext";
 import useRoute from "./useRoute";
 import useWindowDimensions from "./useWindowDimensions";
+import ImportDandisetPage from "./pages/ImportDandisetPage/ImportDandisetPage";
 
 type Props = {
     // none
@@ -43,6 +44,8 @@ const MainWindow: FunctionComponent<Props> = () => {
                             <ComputeResourcePage width={width} height={height} computeResourceId={route.computeResourceId} />
                         ) : route.page === 'register-compute-resource' ? (
                             <RegisterComputeResourcePage />
+                        ) : route.page === 'import-dandiset' ? (
+                            <ImportDandisetPage dandisetId={route.dandisetId} />
                         ) : (
                             <div>404</div>
                         )
